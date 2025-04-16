@@ -17,7 +17,7 @@ Tama is a Command-Line Interface (CLI) tool designed for managing tasks, enhance
 
 1.  **Clone the Repository:**
     ```bash
-    git clone <your-repository-url>
+    git clone https://github.com/Gitreceiver/TAMA-MCP
     cd tama-project-directory 
     ```
 2.  **Create and Activate Virtual Environment（Recommend python 3.12）:**

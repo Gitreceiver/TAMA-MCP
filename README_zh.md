@@ -17,7 +17,7 @@ Tama 是一个命令行界面 (CLI) 工具，专为任务管理而设计，并�
 
 1.  **克隆仓库:**
     ```bash
-    git clone <your-repository-url>
+    git clone https://github.com/Gitreceiver/TAMA-MCP
     cd tama-project-directory
     ```
 2.  **创建并激活虚拟环境(推荐3.12):**
