@@ -61,11 +61,13 @@ Tama commands are run from your terminal within the activated virtual environmen
     tama list 
     tama list --status pending --priority high # Filter
     ```
+    ![tama-list|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162318995.png)
 *   **Show Task Details:**
     ```bash
     tama show 1       # Show task 1
     tama show 1.2     # Show subtask 2 of task 1
     ```
+    ![tama-show|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162321747.png)
 *   **Add Task/Subtask:**
     ```bash
     # Add a top-level task
@@ -74,21 +76,30 @@ Tama commands are run from your terminal within the activated virtual environmen
     # Add a subtask to task 1
     tama add "Create login API endpoint" --parent 1 --desc "Needs JWT handling" 
     ```
+    ![tama-add-1|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162324506.png)
+
+    ![tama-add-2|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162327993.png)
 *   **Set Task Status:**
     ```bash
     tama status 1 done 
     tama status 1.2 in-progress
     ```
     *(Valid statuses: pending, in-progress, done, deferred, blocked, review)*
+    ![tama-status1|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162329503.png)
+
+    ![tama-status2|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162316531.png)
 *   **Remove Task/Subtask:**
     ```bash
     tama remove 2
     tama remove 1.3
     ```
+    ![tama-remove|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162316267.png)
+
 *   **Find Next Task:**
     ```bash
     tama next
     ```
+    ![tama-next|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162331771.png)
 
 **AI Commands:**
 
@@ -96,10 +107,14 @@ Tama commands are run from your terminal within the activated virtual environmen
     ```bash
     tama prd path/to/your/document.txt
     ```
+
+    ![tama-prd|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162316997.png)
+
 *   **Expand Task:** (Provide a main task ID)
     ```bash
     tama expand 1 
     ```
+    ![tama-expand|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162317158.png)
 
 **Utility Commands:**
 
@@ -134,6 +149,43 @@ If you modify the source code, remember to reinstall the package to make the cha
 ```bash
 uv pip install . 
 ```
+
+## MCP Server Usage
+
+Tama can be used as an MCP (Model Context Protocol) server, allowing other applications to interact with it programmatically. To start the server, run:
+
+```bash
+uv --directory /path/to/your/TAMA_MCP run python -m src.mcp_server
+```
+in your mcp client: (cline,cursor,claude)
+{
+  "mcpServers": {
+    "TAMA-MCP-Server": {
+        "command": "uv",
+        "args": [
+            "--directory",
+            "/path/to/your/TAMA_MCP",
+            "run",
+            "python",
+            "-m",
+            "src.mcp_server"
+        ],
+        "disabled": false,
+        "transportType": "stdio",
+        "timeout": 60
+    },
+  }
+}
+
+This will start the Tama MCP server, which provides the following tools:
+
+*   **get\_task:** Finds and returns a task or subtask by its ID.
+*   **find\_next\_task:** Finds the next available task to work on.
+*   **set\_task\_status:** Sets the status for a task or subtask.
+*   **add\_task:** Adds a new main task.
+*   **add\_subtask:** Adds a new subtask.
+*   **remove\_subtask:** Removes a subtask.
+*   **get\_tasks\_table\_report:** Generates a Markdown table representing the task structure.
 
 ## License
 

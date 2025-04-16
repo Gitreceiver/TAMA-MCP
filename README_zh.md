@@ -61,11 +61,13 @@ Tama 命令需要在激活的虚拟环境下的终端中运行。
     tama list
     tama list --status pending --priority high # 筛选
     ```
+    ![tama-list|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162318995.png)
 *   **显示任务详情:**
     ```bash
     tama show 1       # 显示任务 1
     tama show 1.2     # 显示任务 1 的子任务 2
     ```
+    ![tama-show|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162321747.png)
 *   **添加任务/子任务:**
     ```bash
     # 添加顶级任务
@@ -74,33 +76,43 @@ Tama 命令需要在激活的虚拟环境下的终端中运行。
     # 为任务 1 添加子任务
     tama add "创建登录 API 端点" --parent 1 --desc "需要处理 JWT"
     ```
+    ![tama-add-1|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162324506.png)
+
+    ![tama-add-2|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162327993.png)
 *   **设置任务状态:**
     ```bash
     tama status 1 done
     tama status 1.2 in-progress
     ```
     *(有效状态: pending, in-progress, done, deferred, blocked, review)*
+    ![tama-status1|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162329503.png)
+
+    ![tama-status2|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162316531.png)
 *   **移除任务/子任务:**
     ```bash
     tama remove 2
     tama remove 1.3
     ```
+    ![tama-remove|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162316267.png)
 *   **查找下一个任务:**
     ```bash
     tama next
     ```
-
+    ![tama-next|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162331771.png)
 **AI 命令:**
 
 *   **解析 PRD:** (输入文件必须是 `.txt` 或 `.prd`)
     ```bash
     tama prd path/to/your/document.txt
     ```
+    ![tama-prd|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162316997.png)
+
 *   **分解任务:** (提供主任务 ID)
     ```bash
     tama expand 1
     ```
-
+    ![tama-expand|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162317158.png)
+    
 **工具命令:**
 
 *   **检查依赖:**
@@ -134,6 +146,42 @@ Tama 命令需要在激活的虚拟环境下的终端中运行。
 ```bash
 uv pip install .
 ```
+
+## MCP 服务器用法
+
+Tama 可以用作 MCP（模型上下文协议）服务器，允许其他应用程序以编程方式与其交互。要启动服务器，请运行：
+
+```bash
+uv --directory /path/to/your/TAMA_MCP run python -m src.mcp_server
+```
+客户端格式：
+{
+  "mcpServers": {
+    "TAMA-MCP-Server": {
+        "command": "uv",
+        "args": [
+            "--directory",
+            "/path/to/your/TAMA_MCP",
+            "run",
+            "python",
+            "-m",
+            "src.mcp_server"
+        ],
+        "disabled": false,
+        "transportType": "stdio",
+        "timeout": 60
+    },
+  }
+}
+这将启动 Tama MCP 服务器，它提供以下工具：
+
+*   **get\_task:** 通过 ID 查找并返回任务或子任务。
+*   **find\_next\_task:** 查找下一个可用的任务。
+*   **set\_task\_status:** 设置任务或子任务的状态。
+*   **add\_task:** 添加新的主任务。
+*   **add\_subtask:** 添加新的子任务。
+*   **remove\_subtask:** 移除子任务。
+*   **get\_tasks\_table\_report:** 生成表示任务结构的 Markdown 表格。
 
 ## 许可证
 
