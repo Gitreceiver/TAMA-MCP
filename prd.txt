@@ -1,0 +1,29 @@
+# Product Requirements Document: Simple Task Manager CLI
+
+## 1. Introduction
+This document outlines the requirements for a simple command-line interface (CLI) tool for managing tasks.
+
+## 2. Goals
+- Allow users to add new tasks.
+- Allow users to list pending tasks.
+- Allow users to mark tasks as complete.
+
+## 3. Features
+
+### 3.1 Add Task
+- **Command:** `task add "Task description"`
+- **Functionality:** Adds a new task with the given description to the task list. Tasks should have a unique ID, description, and a status (default: 'pending').
+
+### 3.2 List Tasks
+- **Command:** `task list`
+- **Functionality:** Displays all tasks with status 'pending'. Output should show the task ID and description.
+
+### 3.3 Complete Task
+- **Command:** `task done <task_id>`
+- **Functionality:** Marks the task with the specified `task_id` as 'done'.
+
+## 4. Non-Goals
+- Task priorities
+- Subtasks
+- Due dates
+- User accounts 
