@@ -155,24 +155,26 @@ Tama 可以用作 MCP（模型上下文协议）服务器，允许其他应用�
 uv --directory /path/to/your/TAMA_MCP run python -m src.mcp_server
 ```
 客户端格式：
+```
 {
-  "mcpServers": {
-    "TAMA-MCP-Server": {
-        "command": "uv",
-        "args": [
-            "--directory",
-            "/path/to/your/TAMA_MCP",
-            "run",
-            "python",
-            "-m",
-            "src.mcp_server"
-        ],
-        "disabled": false,
-        "transportType": "stdio",
-        "timeout": 60
-    },
-  }
+  "mcpServers": {
+    "TAMA-MCP-Server": {
+        "command": "uv",
+        "args": [
+            "--directory",
+            "/path/to/your/TAMA_MCP",
+            "run",
+            "python",
+            "-m",
+            "src.mcp_server"
+        ],
+        "disabled": false,
+        "transportType": "stdio",
+        "timeout": 60
+    },
+  }
 }
+```
 这将启动 Tama MCP 服务器，它提供以下工具：
 
 *   **get\_task:** 通过 ID 查找并返回任务或子任务。
@@ -185,6 +187,5 @@ uv --directory /path/to/your/TAMA_MCP run python -m src.mcp_server
 
 ## 许可证
 
-(假设为 MIT 许可证 - 如果不正确请更新)
-
+MIT 许可证
 本项目采用 MIT 许可证授权。详见 LICENSE 文件。
