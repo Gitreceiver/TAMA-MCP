@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 from openai import OpenAI, APITimeoutError, APIConnectionError, RateLimitError
 
 # Absolute imports
-from config.settings import settings
+from config import settings
 import ai.prompts as prompts
 
 logger = logging.getLogger(__name__)

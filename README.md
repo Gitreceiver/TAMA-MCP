@@ -1,5 +1,6 @@
 # Tama - AI-Powered Task Manager CLI ✨
 
+![TAMA-icon|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504171218630.jpg)
 [中文](https://github.com/Gitreceiver/TAMA-MCP/blob/main/README_zh.md)
 Tama is a Command-Line Interface (CLI) tool designed for managing tasks, enhanced with AI capabilities for task generation and expansion. It utilizes AI (specifically configured for DeepSeek models via their OpenAI-compatible API) to parse Product Requirements Documents (PRDs) and break down complex tasks into manageable subtasks.
 

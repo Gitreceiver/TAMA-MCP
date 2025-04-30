@@ -12,7 +12,7 @@ import task_manager.dependencies as dependencies
 import task_manager.complexity as complexity
 import task_manager.file_generator as file_generator
 import cli.ui as ui
-from config.settings import settings
+from config import settings
 from exceptions import ParentTaskNotFoundError # Import exception
 
 # Configure logging

@@ -8,7 +8,7 @@ import task_manager.core as core
 from task_manager.data_models import TasksData, Task, Subtask
 import ai.client as ai_client
 import ai.prompts as prompts
-from config.settings import settings
+from config import settings
 from exceptions import AIResponseParsingError
 
 logger = logging.getLogger(__name__)

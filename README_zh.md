@@ -1,5 +1,6 @@
 # Tama - AI 驱动的任务管理命令行工具 ✨
 
+![TAMA-icon|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504171218630.jpg)
 [English](https://github.com/Gitreceiver/TAMA-MCP/blob/main/README.md)
 
 Tama 是一个命令行界面 (CLI) 工具，专为任务管理而设计，并通过 AI 能力增强，用于任务生成和分解。它利用 AI（特别配置为通过 OpenAI 兼容 API 使用 DeepSeek 模型）来解析产品需求文档 (PRD) 并将复杂任务分解为可管理的子任务。

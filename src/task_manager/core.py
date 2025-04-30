@@ -9,7 +9,7 @@ from typing import List, Optional, Union
 # from ..exceptions import ParentTaskNotFoundError # Relative
 from task_manager.data_models import Task, Subtask, Status, Priority, Dependency
 from task_manager.storage import load_tasks, save_tasks
-from config.settings import settings
+from config import settings
 from exceptions import ParentTaskNotFoundError
 from functools import lru_cache
 import datetime

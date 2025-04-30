@@ -7,7 +7,7 @@ import task_manager.storage as storage
 from task_manager.data_models import TasksData, Task
 import ai.client as ai_client
 import ai.prompts as prompts
-from config.settings import settings
+from config import settings
 
 logger = logging.getLogger(__name__)
 

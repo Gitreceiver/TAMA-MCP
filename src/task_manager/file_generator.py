@@ -7,7 +7,7 @@ from typing import Optional
 # from .data_models import Task # Relative
 # from ..config.settings import settings # Relative
 from task_manager.data_models import Task # Absolute
-from config.settings import settings # Absolute
+from config import settings # Absolute
 
 logger = logging.getLogger(__name__)
 

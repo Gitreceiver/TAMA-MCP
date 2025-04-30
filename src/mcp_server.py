@@ -18,7 +18,7 @@ from task_manager.core import (
 )
 from task_manager.data_models import Task, Subtask, Status, Priority, Dependency, TasksData
 from task_manager.storage import load_tasks, save_tasks
-from config.settings import settings
+from config import settings
 
 logging.basicConfig(level=logging.INFO if not settings.DEBUG else logging.DEBUG)
 logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, model_validator
 from typing import List, Optional, Union, Literal
-from config.settings import settings
+from config import settings
 
 Status = Literal["pending", "in-progress", "done", "deferred", "blocked", "review"]
 Priority = Literal["low", "medium", "high"]

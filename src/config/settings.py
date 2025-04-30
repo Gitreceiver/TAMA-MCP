@@ -1,61 +1,56 @@
 import os
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import SecretStr, Field, field_validator
-from typing import Literal
 import logging
+from dotenv import load_dotenv
 
-LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-Priority = Literal["low", "medium", "high"]
+# 日志等级类型
+# LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+# 优先级类型
+# Priority = Literal["low", "medium", "high"]
 
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file='E:/TAMA_MCP/.env',
-        env_file_encoding='utf-8',
-        extra='ignore',  # Ignore extra env vars not defined in the model
-        case_sensitive=False,  # Env vars are case-insensitive
-        env_nested_delimiter='__',  # Use double underscore for nested env vars
-        env_prefix='APP_',  # Optional: prefix all env vars with APP_
-    )
+# 加载 .env 文件（路径相对于本文件）
+dotenv_path = os.path.join(os.path.dirname(__file__), '../../.env')
+load_dotenv(dotenv_path=dotenv_path)
 
-    # --- DeepSeek Configuration ---
-    DEEPSEEK_API_KEY: SecretStr
-    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com/v1"
-    DEEPSEEK_GENERAL_MODEL: str = Field(default="deepseek-chat", description="Model for general tasks like parsing")
-    DEEPSEEK_REASONING_MODEL: str = Field(default="deepseek-coder", description="Model for coding/reasoning tasks")
+# --- DeepSeek 配置 ---
+# API 密钥（必填）
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY', None)
+# API 基础地址
+DEEPSEEK_BASE_URL = os.getenv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1')
+# 通用模型
+DEEPSEEK_GENERAL_MODEL = os.getenv('DEEPSEEK_GENERAL_MODEL', 'deepseek-chat')
+# 推理/编码模型
+DEEPSEEK_REASONING_MODEL = os.getenv('DEEPSEEK_REASONING_MODEL', 'deepseek-coder')
 
-    # --- AI General Settings ---
-    AI_MAX_TOKENS: int = Field(default=8192, gt=0, description="Max tokens for AI response")
-    AI_TEMPERATURE: float = Field(default=0.7, ge=0.0, le=2.0, description="AI temperature (0.0-2.0)")
+# --- AI 通用设置 ---
+# AI 响应最大 token 数
+AI_MAX_TOKENS = int(os.getenv('AI_MAX_TOKENS', 8192))
+# AI 温度参数
+AI_TEMPERATURE = float(os.getenv('AI_TEMPERATURE', 0.7))
 
-    # --- Application Settings ---
-    TASKS_JSON_PATH: str = Field(default="tasks.json", description="Path to the main tasks file")
-    TASKS_DIR_PATH: str = Field(default="tasks", description="Directory for individual task files")
-    LOG_LEVEL: LogLevel = Field(default="INFO", description="Logging level")
-    DEFAULT_PRIORITY: Priority = Field(default="medium", description="Default task priority")
-    DEFAULT_SUBTASKS: int = Field(default=3, gt=0, description="Default number of subtasks for expansion")
-    PROJECT_NAME: str = Field(default="My Python Task Manager", description="Project name for metadata")
-    PROJECT_VERSION: str = Field(default="0.1.0", description="Project version for metadata")
-    DEBUG: bool = Field(default=False, description="Enable debug mode")
+# --- 应用设置 ---
+# 主任务文件路径
+TASKS_JSON_PATH = os.path.abspath(os.getenv('TASKS_JSON_PATH', 'tasks.json'))
+# 任务文件夹路径
+TASKS_DIR_PATH = os.getenv('TASKS_DIR_PATH', 'tasks')
+# 日志等级
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+# 默认优先级
+DEFAULT_PRIORITY = os.getenv('DEFAULT_PRIORITY', 'medium')  # low, medium, high
+# 默认子任务数
+DEFAULT_SUBTASKS = int(os.getenv('DEFAULT_SUBTASKS', 3))
+# 项目名称
+PROJECT_NAME = os.getenv('PROJECT_NAME', 'My Python Task Manager')
+# 项目版本
+PROJECT_VERSION = os.getenv('PROJECT_VERSION', '0.1.0')
+# 是否开启调试模式
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-    @field_validator('TASKS_JSON_PATH', 'TASKS_DIR_PATH', mode='before')
-    @classmethod
-    def resolve_path(cls, v):
-        # Resolve relative paths based on project root (assuming script runs from root)
-        if isinstance(v, str): # Ensure it's a string before resolving
-            return os.path.abspath(v)
-        return v # Return original value if not a string (or handle error)
-
-# Create a single instance to be imported elsewhere
-settings = Settings()
-
-# --- Temporary Debugging --- 
+# --- 临时调试日志 ---
 config_logger = logging.getLogger("config.settings")
-if settings.DEEPSEEK_API_KEY:
-    key_val = settings.DEEPSEEK_API_KEY.get_secret_value()
-    config_logger.debug(f"[CONFIG DEBUG] Loaded DEEPSEEK_API_KEY: {key_val[:5]}...{key_val[-4:]}")
+if DEEPSEEK_API_KEY:
+    config_logger.debug(f"[CONFIG DEBUG] Loaded DEEPSEEK_API_KEY: {DEEPSEEK_API_KEY[:5]}...{DEEPSEEK_API_KEY[-4:]}")
 else:
-    config_logger.debug("[CONFIG DEBUG] DEEPSEEK_API_KEY not found by Settings.")
-# --- End Temporary Debugging ---
+    config_logger.debug("[CONFIG DEBUG] DEEPSEEK_API_KEY not found.")
 
-# Example usage: from src.config.settings import settings
-# print(settings.DEEPSEEK_API_KEY.get_secret_value())
+# 用法示例：from src.config import settings
+# print(DEEPSEEK_API_KEY)

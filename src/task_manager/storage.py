@@ -6,7 +6,7 @@ from typing import List, Optional
 from pydantic import ValidationError
 
 from task_manager.data_models import TasksData, Task, MetaData
-from config.settings import settings
+from config import settings
 
 logger = logging.getLogger(__name__)
 
