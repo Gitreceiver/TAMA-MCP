@@ -235,3 +235,6 @@ uv --directory /path/to/your/TAMA_MCP run python -m src.mcp_server
 MIT 许可证
 
 本项目采用 MIT 许可证授权。详见 LICENSE 文件。
+
+有任何问题请联系作者微信：
+![b70873c85169d30dcfbff19a76f17fc.jpg|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504302350685.jpg)

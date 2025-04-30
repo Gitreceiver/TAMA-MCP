@@ -233,3 +233,6 @@ This project is licensed under the MIT License. See the LICENSE file for details
 =======
 # TAMA-MCP
 AI-Powered Task Manager CLI with MCP Server
+
+Contact me by wechat:
+![b70873c85169d30dcfbff19a76f17fc.jpg|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504302350685.jpg)
