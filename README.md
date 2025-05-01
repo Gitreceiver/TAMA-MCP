@@ -8,17 +8,18 @@ Tama is a Command-Line Interface (CLI) tool designed for managing tasks, enhance
 
 ## Features
 
-*   **Standard Task Management:** Add, list, show details, update status, and remove tasks and subtasks.
-*   **AI-Powered PRD Parsing:** (`tama prd <filepath>`) Automatically generate a structured task list from a `.txt` or `.prd` file.
-*   **AI-Powered Task Expansion:** (`tama expand <task_id>`) Break down a high-level task into detailed subtasks using AI.
-*   **Dependency Checking:** (`tama deps`) Detect circular dependencies within your tasks.
-*   **Reporting:** (`tama report [markdown|mermaid]`) Generate task reports in Markdown table format or as a Mermaid dependency graph.
-*   **Code Stub Generation:** (`tama gen-file <task_id>`) Create placeholder code files based on task details.
-*   **Next Task Suggestion:** (`tama next`) Identify the next actionable task based on status and dependencies.
-*   **Rich CLI Output:** Uses `rich` for formatted and visually appealing console output (e.g., tables, panels).
+*   **Standard Task Management:** Add, list, show details, update status, and remove tasks and subtasks with dependency tracking.
+*   **Dependency Management:** Add, remove, and track task dependencies with automatic cycle detection.
+*   **AI-Powered PRD Parsing:** (`tama prd <filepath>`) Automatically generate a structured task list from a `.txt` or `.prd` file.
+*   **AI-Powered Task Expansion:** (`tama expand <task_id>`) Break down a high-level task into detailed subtasks using AI.
+*   **Dependency Checking:** (`tama deps`) Detect and visualize circular dependencies within your tasks.
+*   **Reporting:** (`tama report [markdown|mermaid]`) Generate task reports in Markdown table format or as a Mermaid dependency graph.
+*   **Code Stub Generation:** (`tama gen-file <task_id>`) Create placeholder code files based on task details.
+*   **Next Task Suggestion:** (`tama next`) Identify the next actionable task based on status and dependencies.
+*   **Rich CLI Output:** Uses `rich` for formatted and visually appealing console output (e.g., tables, panels).
 
 ## Installation & Setup
-1.  **Clone the Repository:**
+1.  **Clone the Repository:**
 
 ```shell
 git clone https://github.com/Gitreceiver/TAMA-MCP
@@ -27,7 +28,7 @@ cd TAMA-MCP
 
   
 
-2.  **Create and Activate Virtual Environment（Recommend python 3.12）:**
+2.  **Create and Activate Virtual Environment（Recommend python 3.12）:**
 
 ```shell
 uv venv -p 3.12
@@ -40,19 +41,19 @@ source .venv/bin/activate
 ```
 
   
-3.  **Install Dependencies & Project:**
-    (Requires `uv` - install with `pip install uv` if you don't have it)
-    ```shell
-    uv pip install .
-    ```
+3.  **Install Dependencies & Project:**
+    (Requires `uv` - install with `pip install uv` if you don't have it)
+    ```shell
+    uv pip install .
+    ```
 
 (Alternatively, using pip: `pip install .`)
 
 
 ## Configuration ⚙️
 Tama requires API keys for its AI features.
-1.  Create a `.env` file in the project root directory.
-2.  Add your DeepSeek API key:
+1.  Create a `.env` file in the project root directory.
+2.  Add your DeepSeek API key:
 ```dotenv
 # .env file
 DEEPSEEK_API_KEY="your_deepseek_api_key_here"
@@ -66,26 +67,25 @@ The application uses settings defined in `src/config/settings.py`, which loads v
 ## Usage 🚀
 Tama commands are run from your terminal within the activated virtual environment.
 **Core Commands:**
-*   **List Tasks:**
+*   **List Tasks:**
 ```shell
 tama list
 tama list --status pending --priority high # Filter
 ```
+The task list now includes emoji indicators for status and priority, and displays dependencies in a clear markdown table format.
 
-![tama-list|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162318995.png)
 
-
-*   **Show Task Details:**
+*   **Show Task Details:**
 ```shell
-tama show 1       # Show task 1
-tama show 1.2     # Show subtask 2 of task 1
+tama show 1      # Show task 1
+tama show 1.2    # Show subtask 2 of task 1
 ```
 
 ![tama-show|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162321747.png)
 
   
 
-*   **Add Task/Subtask:**
+*   **Add Task/Subtask:**
 
 ```shell
 # Add a top-level task
@@ -100,7 +100,7 @@ tama add "Create login API endpoint" --parent 1 --desc "Needs JWT handling"
 ![tama-add-2|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162327993.png)
 
   
-*   **Set Task Status:**
+*   **Set Task Status:**
 
 ```shell
 tama status 1 done
@@ -113,16 +113,21 @@ tama status 1.2 in-progress
 
 ![tama-status2|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162316531.png)
 
-*   **Remove Task/Subtask:**
-
+*   **Remove Task/Subtask:**
 ```shell
-tama remove 2
-tama remove 1.3
+tama remove 2       # Remove task 2 and all its subtasks
+tama remove 1.3     # Remove subtask 3 of task 1
+```
+When removing a task, all dependent tasks will be automatically updated, and you'll be notified of any affected dependencies.
+
+*   **Manage Dependencies:**
+```shell
+tama add-dep 1 2      # Make task 1 depend on task 2
+tama add-dep 1.2 2.1  # Make subtask 1.2 depend on subtask 2.1
+tama rm-dep 1 2       # Remove dependency of task 1 on task 2
 ```
 
-![tama-remove|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162316267.png)
-
-*   **Find Next Task:**
+*   **Find Next Task:**
 ```shell
 tama next
 ```
@@ -132,14 +137,14 @@ tama next
   
 
 **AI Commands:**
-*   **Parse PRD:** (Input file must be `.txt` or `.prd`)
+*   **Parse PRD:** (Input file must be `.txt` or `.prd`)
 ```shell
 tama prd path/to/your/document.txt
 ```
 
 ![tama-prd|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162316997.png)
 
-*   **Expand Task:** (Provide a main task ID)
+*   **Expand Task:** (Provide a main task ID)
 
 ```shell
 tama expand 1
@@ -149,20 +154,20 @@ tama expand 1
 
   
 **Utility Commands:**
-*   **Check Dependencies:**
+*   **Check Dependencies:**
 
 ```shell
 tama deps
 ```
 
-*   **Generate Report:**
+*   **Generate Report:**
 ```shell
-tama report markdown       # Print markdown table to console
-tama report mermaid        # Print mermaid graph definition
+tama report markdown      # Print markdown table to console
+tama report mermaid       # Print mermaid graph definition
 tama report markdown --output report.md # Save to file
 ```
 
-*   **Generate Placeholder File:**
+*   **Generate Placeholder File:**
 
 ```shell
 tama gen-file 1
@@ -171,7 +176,7 @@ tama gen-file 2 --output-dir src/generated
 
 
 **Shell Completion:**
-*   Instructions for setting up shell completion can be obtained via:
+*   Instructions for setting up shell completion can be obtained via:
 
 ```shell
 tama --install-completion
@@ -188,7 +193,20 @@ uv pip install .
 
 
 ## MCP Server Usage
-Tama can be used as an MCP (Model Context Protocol) server, allowing other applications to interact with it programmatically. To start the server, run:
+Tama can be used as an MCP (Model Context Protocol) server, allowing other applications to interact with it programmatically. The MCP server provides the following tools:
+
+- `list_tasks`: List all tasks with optional status/priority filters in markdown format
+- `show_task`: Display detailed information about a specific task
+- `set_status`: Update task status with automatic propagation
+- `next_task`: Find the next actionable task
+- `add_task`: Create a new main task
+- `add_subtask`: Create a new subtask
+- `remove_item`: Remove a task or subtask with dependency cleanup
+- `add_dependency`: Add a dependency between tasks
+- `remove_dependency`: Remove a dependency between tasks
+- `check_dependencies`: Check for circular dependencies
+
+To start the server:
 ```shell
 uv --directory /path/to/your/TAMA_MCP run python -m src.mcp_server
 ```
@@ -222,7 +240,9 @@ This will start the Tama MCP server, which provides the following tools
 *   **set\_task\_status:** Sets the status for a task or subtask.
 *   **add\_task:** Adds a new main task.
 *   **add\_subtask:** Adds a new subtask.
-*   **remove\_subtask:** Removes a subtask.
+*   **remove\_item:** Removes a subtask or a main task.
+*   **add_dependency:** Add a dependency between tasks
+*   **remove_dependency:** Remove a dependency between tasks
 *   **get\_tasks\_table\_report:** Generates a Markdown table representing the task structure.
 
 ## License
