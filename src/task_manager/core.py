@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import List, Optional, Union
+from collections import defaultdict
 
 # Use absolute imports
 # from .data_models import Task, Subtask, Status, Priority, Dependency # Relative
@@ -253,23 +254,115 @@ def add_subtask(tasks: List[Task], parent_task_id: int, title: str, description:
     logger.info(f"Added new subtask with ID {parent_task_id}.{new_id}")
     return new_subtask
 
+def find_dependent_tasks(tasks: List[Task], task_id_str: str) -> List[tuple[str, str]]:
+    """查找依赖于指定任务的所有任务和子任务。
+    
+    Args:
+        tasks: 任务列表
+        task_id_str: 要查找的任务ID (例如: "1" 或 "1.2")
+        
+    Returns:
+        依赖项列表，每项为 (任务ID, 任务标题) 的元组
+    """
+    dependent_items = []
+    
+    # 遍历所有任务和子任务，检查依赖关系
+    for task in tasks:
+        # 检查主任务的依赖
+        if task_id_str in task.dependencies:
+            dependent_items.append((str(task.id), task.title))
+            
+        # 检查子任务的依赖
+        for subtask in task.subtasks:
+            if task_id_str in subtask.dependencies:
+                dependent_items.append((f"{task.id}.{subtask.id}", subtask.title))
+                
+    return dependent_items
 
-def remove_subtask(tasks: List[Task], task_id_str: str, subtask_id: int) -> bool:
-    """Removes a subtask from a task."""
-    logger.info(f"Removing subtask {subtask_id} from task {task_id_str}")
-    task = get_task_by_id(tasks, task_id_str)
-    if not task or not task.subtasks:
-        logger.error(f"Task with ID '{task_id_str}' not found or has no subtasks.")
-        return False
+def remove_dependency(tasks: List[Task], removed_id: str):
+    """从所有任务中移除对指定任务的依赖。
+    
+    Args:
+        tasks: 任务列表
+        removed_id: 被删除的任务ID
+    """
+    for task in tasks:
+        # 更新主任务的依赖
+        if removed_id in task.dependencies:
+            task.dependencies.remove(removed_id)
+            
+        # 更新子任务的依赖
+        for subtask in task.subtasks:
+            if removed_id in subtask.dependencies:
+                subtask.dependencies.remove(removed_id)
 
-    original_length = len(task.subtasks)
-    task.subtasks = [st for st in task.subtasks if st.id != subtask_id]
-    if len(task.subtasks) < original_length:
-        logger.info(f"Removed subtask {subtask_id} from task {task_id_str}")
-        return True
-    else:
-        logger.error(f"Subtask with ID '{subtask_id}' not found in task '{task_id_str}'.")
-        return False
+def remove_item(tasks: List[Task], task_id_str: str) -> tuple[bool, List[tuple[str, str]]]:
+    """删除任务或子任务，并返回受影响的依赖项。
+    
+    Args:
+        tasks: 任务列表
+        task_id_str: 要删除的任务ID (例如: "1" 或 "1.2")
+        
+    Returns:
+        (是否删除成功, 受影响的依赖项列表)
+    """
+    logger.info(f"Removing item with ID: {task_id_str}")
+    
+    # 检查并解析任务ID
+    if not task_id_str or not isinstance(task_id_str, str):
+        logger.error("Invalid task ID: must be a non-empty string")
+        return False, []
+        
+    try:
+        # 在删除之前查找依赖项
+        dependent_items = find_dependent_tasks(tasks, task_id_str)
+        
+        # 处理子任务删除
+        if '.' in task_id_str:
+            parent_id_str, sub_id_str = task_id_str.split('.')
+            parent_id = int(parent_id_str)
+            sub_id = int(sub_id_str)
+            
+            # 查找父任务
+            parent_task = next((t for t in tasks if t.id == parent_id), None)
+            if not parent_task:
+                logger.error(f"Parent task {parent_id} not found")
+                return False, []
+                
+            # 删除子任务
+            original_length = len(parent_task.subtasks)
+            parent_task.subtasks = [st for st in parent_task.subtasks if st.id != sub_id]
+            
+            if len(parent_task.subtasks) < original_length:
+                # 更新其他任务的依赖
+                remove_dependency(tasks, task_id_str)
+                return True, dependent_items
+            return False, []
+            
+        else:
+            # 处理主任务删除
+            try:
+                task_id = int(task_id_str)
+            except ValueError:
+                logger.error(f"Invalid task ID format: {task_id_str}")
+                return False, []
+            
+            # 删除主任务
+            original_length = len(tasks)
+            tasks[:] = [t for t in tasks if t.id != task_id]
+            
+            if len(tasks) < original_length:
+                # 更新其他任务的依赖
+                remove_dependency(tasks, task_id_str)
+                return True, dependent_items
+            return False, []
+            
+    except ValueError as e:
+        logger.error(f"Error parsing task ID: {e}")
+        return False, []
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return False, []
 
 def generate_markdown_table_tasks_report(tasks: List[Task]) -> str:
     """Generates a Markdown table representing the task structure."""
@@ -380,3 +473,126 @@ def get_status_emoji(status: str) -> str:
 
 # Add implementations for add_subtask, remove_subtask etc. later
 # based on task_manager.test.js requirements
+
+def add_dependency(tasks: List[Task], task_id_str: str, dependency_id: str) -> bool:
+    """为指定任务添加依赖项。
+    
+    Args:
+        tasks: 任务列表
+        task_id_str: 要添加依赖的任务ID (例如: "1" 或 "1.2")
+        dependency_id: 要添加的依赖任务ID (例如: "1" 或 "1.2")
+        
+    Returns:
+        bool: 添加成功返回True，失败返回False
+    """
+    logger.info(f"Adding dependency {dependency_id} to task {task_id_str}")
+    
+    # 检查目标任务是否存在
+    target_item = get_task_by_id(tasks, task_id_str)
+    if not target_item:
+        logger.error(f"Target task {task_id_str} not found")
+        return False
+        
+    # 检查依赖任务是否存在
+    dep_item = get_task_by_id(tasks, dependency_id)
+    if not dep_item:
+        logger.error(f"Dependency task {dependency_id} not found")
+        return False
+        
+    # 检查是否已经存在该依赖
+    if dependency_id in target_item.dependencies:
+        logger.warning(f"Dependency {dependency_id} already exists for task {task_id_str}")
+        return False
+        
+    # 检查是否会造成循环依赖
+    temp_deps = target_item.dependencies.copy()
+    temp_deps.append(dependency_id)
+    if _would_create_cycle(tasks, task_id_str, temp_deps):
+        logger.error(f"Adding dependency {dependency_id} would create a circular dependency")
+        return False
+        
+    # 添加依赖
+    target_item.dependencies.append(dependency_id)
+    logger.info(f"Successfully added dependency {dependency_id} to task {task_id_str}")
+    return True
+
+def remove_single_dependency(tasks: List[Task], task_id_str: str, dependency_id: str) -> bool:
+    """从指定任务中移除单个依赖项。
+    
+    Args:
+        tasks: 任务列表
+        task_id_str: 要移除依赖的任务ID (例如: "1" 或 "1.2")
+        dependency_id: 要移除的依赖任务ID (例如: "1" 或 "1.2")
+        
+    Returns:
+        bool: 移除成功返回True，失败返回False
+    """
+    logger.info(f"Removing dependency {dependency_id} from task {task_id_str}")
+    
+    # 检查目标任务是否存在
+    target_item = get_task_by_id(tasks, task_id_str)
+    if not target_item:
+        logger.error(f"Target task {task_id_str} not found")
+        return False
+        
+    # 检查依赖是否存在
+    if dependency_id not in target_item.dependencies:
+        logger.warning(f"Dependency {dependency_id} not found in task {task_id_str}")
+        return False
+        
+    # 移除依赖
+    target_item.dependencies.remove(dependency_id)
+    logger.info(f"Successfully removed dependency {dependency_id} from task {task_id_str}")
+    return True
+
+def _would_create_cycle(tasks: List[Task], task_id: str, new_deps: List[str]) -> bool:
+    """检查添加新依赖是否会造成循环依赖。
+    
+    Args:
+        tasks: 任务列表
+        task_id: 要检查的任务ID
+        new_deps: 新的依赖列表
+        
+    Returns:
+        bool: 如果会造成循环依赖返回True，否则返回False
+    """
+    # 构建临时依赖图
+    graph = defaultdict(set)
+    
+    # 添加所有现有依赖
+    for task in tasks:
+        task_id_str = str(task.id)
+        for dep in task.dependencies:
+            graph[task_id_str].add(str(dep))
+            
+        # 添加子任务的依赖
+        for subtask in task.subtasks:
+            subtask_id = f"{task.id}.{subtask.id}"
+            for dep in subtask.dependencies:
+                graph[subtask_id].add(str(dep))
+                
+    # 添加新的依赖关系
+    for dep in new_deps:
+        graph[task_id].add(str(dep))
+        
+    # 检查是否有循环
+    visited = set()
+    path = set()
+    
+    def has_cycle(node: str) -> bool:
+        if node in path:
+            return True
+        if node in visited:
+            return False
+            
+        visited.add(node)
+        path.add(node)
+        
+        for neighbor in graph[node]:
+            if has_cycle(neighbor):
+                return True
+                
+        path.remove(node)
+        return False
+        
+    return has_cycle(task_id)

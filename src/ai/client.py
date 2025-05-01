@@ -16,7 +16,7 @@ if not settings.DEEPSEEK_API_KEY:
 else:
     try:
         client = OpenAI(
-            api_key=settings.DEEPSEEK_API_KEY.get_secret_value(),
+            api_key=settings.DEEPSEEK_API_KEY,
             base_url=settings.DEEPSEEK_BASE_URL
         )
         logger.info(f"OpenAI client initialized for DeepSeek at {settings.DEEPSEEK_BASE_URL}")
