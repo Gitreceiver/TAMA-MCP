@@ -191,7 +191,7 @@ tama --install-completion
 如果你修改了源代码，请记得重新安装包以使更改在 CLI 中生效:
 
 ```shell
-uv pip install .
+uv pip install -e .
 ```
 
   

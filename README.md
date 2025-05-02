@@ -188,7 +188,7 @@ tama --install-completion
 
 If you modify the source code, remember to reinstall the package to make the changes effective in the CLI:
 ```shell
-uv pip install .
+uv pip install -e .
 ```
 
 
