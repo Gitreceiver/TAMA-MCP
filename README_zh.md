@@ -19,7 +19,7 @@ Tama 是一个命令行界面 (CLI) 工具，专为任务管理而设计，并�
 1.  **克隆仓库:**
 
 ```shell
-git clone https://github.com/Gitreceiver/TAMA-MCP
+git clone https://github.com/Gitreceiver/TAMA-MCP.git
 cd TAMA-MCP
 ```
 
@@ -40,10 +40,10 @@ source .venv/bin/activate
     (需要 `uv` - 如果没有，请使用 `pip install uv` 安装)
 
 ```shell
-uv pip install .
+uv pip install -e .
 ```
 
-    (或者使用 pip: `pip install .`)
+    (或者使用 pip: `pip install -e .`)
    
 ## 配置 ⚙️
 Tama 的 AI 功能需要 API 密钥。

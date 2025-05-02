@@ -22,7 +22,7 @@ Tama is a Command-Line Interface (CLI) tool designed for managing tasks, enhance
 1.  **Clone the Repository:**
 
 ```shell
-git clone https://github.com/Gitreceiver/TAMA-MCP
+git clone https://github.com/Gitreceiver/TAMA-MCP.git
 cd TAMA-MCP
 ```
 
@@ -44,10 +44,10 @@ source .venv/bin/activate
 3.  **Install Dependencies & Project:**
     (Requires `uv` - install with `pip install uv` if you don't have it)
     ```shell
-    uv pip install .
+    uv pip install -e .
     ```
 
-(Alternatively, using pip: `pip install .`)
+(Alternatively, using pip: `pip install -e .`)
 
 
 ## Configuration ⚙️
