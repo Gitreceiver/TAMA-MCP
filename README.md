@@ -58,7 +58,7 @@ Tama requires API keys for its AI features.
    (You can copy the example file:)
    ```shell
    cp .env.example .env
-   # Windows 下可用：
+   # Windows ：
    copy .env.example .env
    ```
 2.  Add your DeepSeek API key:
@@ -120,10 +120,11 @@ tama status 1 done --propagate
 
 *(Valid statuses: pending, in-progress, done, deferred, blocked, review)*
 
-> `--propagate` 参数说明：
-> - `--propagate` 控制是否将状态变更级联到所有子任务或依赖任务。
-> - 默认行为由配置文件决定（settings.PROPAGATE_STATUS_CHANGE）。
-> - 显式添加 `--propagate` 可强制本次操作级联更新。
+> `--propagate` param details：
+> - `--propagate` controls whether status changes are cascaded to all subtasks or dependent tasks.
+> - The default behavior is determined by the configuration file (settings.PROPAGATE_STATUS_CHANGE).
+> - Explicitly adding --propagate forces the status update to be cascaded for this operation.
+
 
 ![tama-status1|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162329503.png)
 
