@@ -40,6 +40,8 @@ tasks/
 .coverage
 htmlcov/
 test.md
+generated_files/
+test/
 
 # Cursor
 .cursor/rules/
