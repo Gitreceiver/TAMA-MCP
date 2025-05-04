@@ -2,7 +2,7 @@ import pytest
 from typing import List
 from unittest.mock import patch
 # Use absolute path for imports
-from src.task_manager.core import get_task_by_id, set_task_status, find_next_task, add_new_task, add_subtask, remove_subtask
+from src.task_manager.core import get_task_by_id, set_task_status, find_next_task, add_new_task, add_subtask, remove_item, add_dependency, remove_dependency
 from src.task_manager.data_models import Task, Subtask, TasksData, MetaData
 from src.exceptions import ParentTaskNotFoundError
 
@@ -189,28 +189,56 @@ def test_add_subtask_parent_not_found(sample_tasks_list):
     with pytest.raises(ParentTaskNotFoundError):
         add_subtask(sample_tasks_list, 99, "Subtask")
 
-# --- Tests for remove_subtask ---
-def test_remove_subtask_success(sample_tasks_list):
+# --- Tests for remove_item ---
+def test_remove_item_subtask_success(sample_tasks_list):
+    """测试成功移除子任务"""
     original_length = len(sample_tasks_list[2].subtasks)
-    result = remove_subtask(sample_tasks_list, "3", 1)
-    assert result is True
+    result = remove_item(sample_tasks_list, "3.1")
+    assert result[0] is True
     assert len(sample_tasks_list[2].subtasks) == original_length - 1
-    # Verify that the correct subtask was removed
+    # 验证已移除正确的子任务
     assert get_task_by_id(sample_tasks_list, "3.1") is None
 
-def test_remove_subtask_not_found(sample_tasks_list):
-    result = remove_subtask(sample_tasks_list, "3", 99)
-    assert result is False
-    # Length should not change
+def test_remove_item_subtask_not_found(sample_tasks_list):
+    """测试移除不存在的子任务"""
+    result = remove_item(sample_tasks_list, "3.99")
+    assert result[0] is False
+    # 长度不变
     assert len(sample_tasks_list[2].subtasks) == 2
 
-def test_remove_subtask_parent_not_found(sample_tasks_list):
-    result = remove_subtask(sample_tasks_list, "99", 1)
-    assert result is False
-    # Length should not change
-    assert len(sample_tasks_list[2].subtasks) == 2 # This is a bit fragile
+def test_remove_item_task_success(sample_tasks_list):
+    """测试成功移除任务"""
+    original_length = len(sample_tasks_list)
+    result = remove_item(sample_tasks_list, "2")
+    assert result[0] is True
+    assert len(sample_tasks_list) == original_length - 1
+    assert get_task_by_id(sample_tasks_list, "2") is None
 
-def test_remove_subtask_no_subtasks(sample_tasks_list):
-    # Task 1 has no subtasks
-    result = remove_subtask(sample_tasks_list, "1", 1)
-    assert result is False
+def test_remove_item_task_not_found(sample_tasks_list):
+    """测试移除不存在的任务"""
+    result = remove_item(sample_tasks_list, "99")
+    assert result[0] is False
+    # 长度不变
+    assert len(sample_tasks_list) == 4
+
+# --- Tests for add_dependency ---
+def test_add_dependency_success(sample_tasks_list):
+    """测试成功添加依赖"""
+    result = add_dependency(sample_tasks_list, "2", "1")
+    assert result is True
+    assert 1 in get_task_by_id(sample_tasks_list, "2").dependencies
+
+def test_add_dependency_duplicate(sample_tasks_list):
+    """测试重复添加依赖"""
+    add_dependency(sample_tasks_list, "2", "1")
+    result = add_dependency(sample_tasks_list, "2", "1")
+    assert result is False  # 已存在依赖
+
+# --- Tests for remove_dependency ---
+def test_remove_dependency_success(sample_tasks_list):
+    """测试成功移除依赖"""
+    # 先确保有依赖
+    add_dependency(sample_tasks_list, "2", 1)
+    remove_dependency(sample_tasks_list, 1)
+    deps = get_task_by_id(sample_tasks_list, "2").dependencies
+    assert 1 not in deps

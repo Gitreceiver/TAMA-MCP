@@ -131,11 +131,11 @@ def find_next_task(tasks: List[Task]) -> Optional[Task]:
 
 # --- Write Operations ---
 
-def set_task_status(tasks: List[Task], task_id_str: str, new_status: str) -> bool:
-    """Sets the status of a task or subtask. Modifies the list in-place."""
-    logger.info(f"Attempting to set status of '{task_id_str}' to '{new_status}'")
+def set_task_status(tasks: List[Task], task_id_str: str, new_status: str, propagate: bool = False) -> bool:
+    """设置任务或子任务的状态。可选是否级联影响子任务。"""
+    logger.info(f"Attempting to set status of '{task_id_str}' to '{new_status}' (propagate={propagate})")
     
-    # Validate status first
+    # 校验状态
     if new_status not in Status.__args__:
         logger.error(f"Invalid status '{new_status}'.")
         return False
@@ -148,7 +148,7 @@ def set_task_status(tasks: List[Task], task_id_str: str, new_status: str) -> boo
     start_time = datetime.datetime.now()
     old_status = item.status
     
-    # Skip if status is already set
+    # 状态未变直接返回
     if old_status == new_status:
         logger.debug(f"Status already set to '{new_status}' for '{task_id_str}'")
         return True
@@ -156,7 +156,7 @@ def set_task_status(tasks: List[Task], task_id_str: str, new_status: str) -> boo
     item.status = new_status
     logger.info(f"Updated status of '{task_id_str}' from '{old_status}' to '{item.status}'")
 
-    # Record execution history
+    # 记录执行历史
     end_time = datetime.datetime.now()
     task_execution_history.append({
         "task_id": task_id_str,
@@ -168,13 +168,16 @@ def set_task_status(tasks: List[Task], task_id_str: str, new_status: str) -> boo
         "success": True
     })
 
-    # Handle status propagation
-    if isinstance(item, Task) and item.status == "done" and item.subtasks:
-        logger.info(f"Propagating 'done' status to subtasks of task {item.id}")
-        for subtask in item.subtasks:
-            if subtask.status != "done":
-                subtask.status = "done"
-                logger.debug(f"  - Set subtask {item.id}.{subtask.id} to done.")
+    # 处理状态级联
+    if isinstance(item, Task) and item.subtasks:
+        # 仅当propagate为True时，主任务状态变更同步所有子任务
+        if propagate:
+            logger.info(f"Propagating '{new_status}' status to subtasks of task {item.id}")
+            for subtask in item.subtasks:
+                if subtask.status != new_status:
+                    subtask.status = new_status
+                    logger.debug(f"  - Set subtask {item.id}.{subtask.id} to {new_status}.")
+        # 否则不做任何子任务状态变更
 
     elif isinstance(item, Subtask) and item.status == "done":
         parent_task = next((t for t in tasks if t.id == item.parent_task_id), None)
@@ -183,9 +186,9 @@ def set_task_status(tasks: List[Task], task_id_str: str, new_status: str) -> boo
             if all_subs_done and parent_task.status != 'done':
                 logger.info(f"All subtasks of Task {parent_task.id} are done. Setting parent to done.")
                 parent_task.status = 'done'
-                # Recursively check if this affects parent's parent
-                if parent_task.parent_task_id:  # If parent is also a subtask
-                    set_task_status(tasks, str(parent_task.parent_task_id), 'done')
+                # 递归检查父任务的父任务
+                if parent_task.parent_task_id:  # 如果父任务也是子任务
+                    set_task_status(tasks, str(parent_task.parent_task_id), 'done', propagate=propagate)
 
     return True
 

@@ -94,9 +94,10 @@ def show(
 @app.command(name="status", help="Set the status for a task or subtask.")
 def set_status_command(
     task_id: str = typer.Argument(..., help="The ID of the task or subtask to update (e.g., '1' or '1.2')."),
-    new_status: str = typer.Argument(..., help=f"New status ({', '.join(data_models.Status.__args__)})")
+    new_status: str = typer.Argument(..., help=f"New status ({', '.join(data_models.Status.__args__)})"),
+    propagate: bool = typer.Option(settings.PROPAGATE_STATUS_CHANGE, "--propagate", help="Does cascading affect subtasks (default see configuration file)")
 ):
-    """Sets the status for a specified task/subtask."""
+    """设置任务或子任务的状态。"""
     logger.info(f"Attempting to set status to '{new_status}' for ID: {task_id}")
     # Validate status input against the Literal type
     if new_status not in data_models.Status.__args__:
@@ -119,7 +120,7 @@ def set_status_command(
         ui.console.print(Panel(f"Status for '{task_id}' is already '{new_status}'. No update needed.", title="Status Update", border_style="yellow"))
         raise typer.Exit()
 
-    if core.set_task_status(tasks_data.tasks, task_id, new_status):
+    if core.set_task_status(tasks_data.tasks, task_id, new_status, propagate=propagate):
         save_task_data(tasks_data)
         # --- Optimized Output with old/new status ---
         ui.console.print(Panel(f"Status for '{task_id}' changed from [yellow]'{old_status}'[/yellow] to [green]'{new_status}'[/green].", title="[bold green]✅ Status Updated[/bold green]", border_style="green"))

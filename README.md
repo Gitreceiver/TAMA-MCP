@@ -30,6 +30,8 @@ cd TAMA-MCP
 
 2.  **Create and Activate Virtual Environment（Recommend python 3.12）:**
 
+[uv install and usage](https://www.cnblogs.com/wang_yb/p/18635441)
+
 ```shell
 uv venv -p 3.12
 
@@ -47,12 +49,18 @@ source .venv/bin/activate
     uv pip install -e .
     ```
 
-(Alternatively, using pip: `pip install -e .`)
+(Alternatively, if you use conda ,using pip: `pip install -e .`)
 
 
 ## Configuration ⚙️
 Tama requires API keys for its AI features.
 1.  Create a `.env` file in the project root directory.
+   (You can copy the example file:)
+   ```shell
+   cp .env.example .env
+   # Windows 下可用：
+   copy .env.example .env
+   ```
 2.  Add your DeepSeek API key:
 ```dotenv
 # .env file
@@ -105,9 +113,17 @@ tama add "Create login API endpoint" --parent 1 --desc "Needs JWT handling"
 ```shell
 tama status 1 done
 tama status 1.2 in-progress
+# 级联更新子任务/依赖任务状态
+# Cascade update subtasks/dependent tasks status
+tama status 1 done --propagate
 ```
 
 *(Valid statuses: pending, in-progress, done, deferred, blocked, review)*
+
+> `--propagate` 参数说明：
+> - `--propagate` 控制是否将状态变更级联到所有子任务或依赖任务。
+> - 默认行为由配置文件决定（settings.PROPAGATE_STATUS_CHANGE）。
+> - 显式添加 `--propagate` 可强制本次操作级联更新。
 
 ![tama-status1|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162329503.png)
 

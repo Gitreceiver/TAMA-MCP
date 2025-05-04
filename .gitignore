@@ -39,7 +39,8 @@ tasks/
 .pytest_cache/
 .coverage
 htmlcov/
+test.md
 
 # Cursor
-.Cursor
+.cursor/rules/
 .clinerules

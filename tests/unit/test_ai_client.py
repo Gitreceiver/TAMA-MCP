@@ -119,11 +119,11 @@ def test_call_deepseek_client_not_initialized(mocker):
 @patch('src.ai.client.call_deepseek')
 def test_generate_tasks_from_prd_success(mock_call_deepseek):
     """Test successful task generation."""
-    mock_call_deepseek.return_value = '{"meta": {}, "tasks": [{"id": 1}]}'
+    mock_call_deepseek.return_value = '{"meta": {{}}, "tasks": [{{"id": 1}}]}'
     prd_content = "Build a thing."
     result = ai_client.generate_tasks_from_prd(prd_content)
 
-    assert result == '{"meta": {}, "tasks": [{"id": 1}]}'
+    assert result == '{"meta": {{}}, "tasks": [{{"id": 1}}]}'
     mock_call_deepseek.assert_called_once()
     args, kwargs = mock_call_deepseek.call_args
     # Check messages in kwargs instead of args
@@ -131,7 +131,7 @@ def test_generate_tasks_from_prd_success(mock_call_deepseek):
     assert isinstance(kwargs["messages"], list)
     assert len(kwargs["messages"]) == 1
     assert "Build a thing." in kwargs["messages"][0]["content"]
-    assert "JSON format" in kwargs["messages"][0]["content"] # Also check prompt content
+    assert "Output ONLY the JSON object" in kwargs["messages"][0]["content"]
 
 @patch('src.ai.client.call_deepseek')
 def test_generate_tasks_from_prd_api_fail(mock_call_deepseek):

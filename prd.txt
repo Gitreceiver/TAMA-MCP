@@ -1,29 +1,80 @@
-# Product Requirements Document: Simple Task Manager CLI
+# Tama 产品需求文档
 
-## 1. Introduction
-This document outlines the requirements for a simple command-line interface (CLI) tool for managing tasks.
+## 1. 核心任务管理功能
 
-## 2. Goals
-- Allow users to add new tasks.
-- Allow users to list pending tasks.
-- Allow users to mark tasks as complete.
+**需求:** 系统应提供基础的任务管理能力，允许用户创建、查看、列出、更新和删除任务及子任务。
 
-## 3. Features
+* 支持任务 ID 标识 (主任务和子任务)。
+* 支持任务标题和描述。
+* 支持任务状态管理 (pending, in-progress, done, deferred, blocked, review)。
+* 支持任务优先级设置。
 
-### 3.1 Add Task
-- **Command:** `task add "Task description"`
-- **Functionality:** Adds a new task with the given description to the task list. Tasks should have a unique ID, description, and a status (default: 'pending').
+## 2. 任务依赖关系管理
 
-### 3.2 List Tasks
-- **Command:** `task list`
-- **Functionality:** Displays all tasks with status 'pending'. Output should show the task ID and description.
+**需求:** 系统应支持定义和管理任务之间的依赖关系。
 
-### 3.3 Complete Task
-- **Command:** `task done <task_id>`
-- **Functionality:** Marks the task with the specified `task_id` as 'done'.
+* 允许指定一个任务依赖于另一个任务完成。
+* 支持添加和移除任务依赖。
+* 自动检测并防止循环依赖的产生。
 
-## 4. Non-Goals
-- Task priorities
-- Subtasks
-- Due dates
-- User accounts 
+## 3. AI 驱动的 PRD 文档解析
+
+**需求:** 系统应能利用 AI 解析产品需求文档（`.txt` 或 `.prd` 文件），自动生成任务列表。
+
+* 输入为一个文本文件路径。
+* AI 应能识别文档中的潜在任务和子任务。
+* 生成的任务应添加到当前的任务列表中。
+
+## 4. AI 驱动的任务分解
+
+**需求:** 系统应能利用 AI 将一个高层级任务分解为更详细的子任务。
+
+* 输入为一个现有任务的 ID。
+* AI 应根据任务的标题和描述生成细分的子任务。
+* 生成的子任务应作为指定任务的子项添加到列表中。
+
+## 5. 依赖关系检查与可视化
+
+**需求:** 系统应提供工具来检查任务列表中的依赖关系，并能可视化依赖结构。
+
+* 提供命令来执行循环依赖检查。
+* 能够生成表示依赖关系的图（例如 Mermaid 格式）。
+
+## 6. 任务报告生成
+
+**需求:** 系统应能生成包含任务信息的报告。
+
+* 支持生成结构化的 Markdown 表格报告。
+* 支持生成描述任务依赖的 Mermaid 图定义。
+* 支持将报告输出到控制台或文件。
+
+## 7. 代码桩文件生成
+
+**需求:** 系统应能基于任务信息生成占位符的代码文件。
+
+* 输入为一个任务 ID。
+* 根据任务详情生成一个或多个文件，作为开发起点。
+* 支持指定输出目录。
+
+## 8. 下一个可执行任务建议
+
+**需求:** 系统应能根据任务状态和依赖关系识别并建议下一个可以开始执行的任务。
+
+* 考虑任务的依赖状态（所有依赖任务必须完成）。
+* 考虑任务的当前状态。
+* 提供一个命令来获取下一个建议任务。
+
+## 9. 丰富的命令行用户界面
+
+**需求:** 系统应提供一个用户友好且信息丰富的命令行界面。
+
+* 使用富文本格式化输出，例如表格、面板、颜色和表情符号。
+* 提高命令行输出的可读性和用户体验。
+
+## 10. MCP 服务器接口
+
+**需求:** 系统应提供一个模型上下文协议 (MCP) 服务器接口，允许其他应用通过编程方式与任务数据和功能交互。
+
+* 实现 MCP 协议。
+* 通过服务器暴露核心任务管理和查询功能。
+* 提供文档说明如何通过 MCP 客户端连接和使用提供的工具。

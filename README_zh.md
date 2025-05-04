@@ -25,6 +25,8 @@ cd TAMA-MCP
 
 2.  **创建并激活虚拟环境(推荐3.12):**
 
+uv的安装和使用的基本方法可以参考 [uv安装和使用](https://www.cnblogs.com/wang_yb/p/18635441)
+
 ```shell
 uv venv -p 3.12
 
@@ -43,11 +45,17 @@ source .venv/bin/activate
 uv pip install -e .
 ```
 
-    (或者使用 pip: `pip install -e .`)
+    (conda可以使用 pip: `pip install -e .`)
    
 ## 配置 ⚙️
 Tama 的 AI 功能需要 API 密钥。
 1.  在项目根目录创建一个 `.env` 文件。
+   （你可以直接复制示例文件）
+   ```shell
+   cp .env.example .env
+   # Windows 下可用：
+   copy .env.example .env
+   ```
 2.  添加你的 DeepSeek API 密钥:
 
 ```dotenv
@@ -98,9 +106,16 @@ tama add "创建登录 API 端点" --parent 1 --desc "需要处理 JWT"
 ```shell
 tama status 1 done
 tama status 1.2 in-progress
+# 级联更新子任务/依赖任务状态
+tama status 1 done --propagate
 ```
 
 *(有效状态: pending, in-progress, done, deferred, blocked, review)*
+
+> `--propagate` 参数说明：
+> - `--propagate` 控制是否将状态变更级联到所有子任务或依赖任务。
+> - 默认行为由配置文件决定（settings.PROPAGATE_STATUS_CHANGE）。
+> - 显式添加 `--propagate` 可强制本次操作级联更新。
 
 ![tama-status1|500](https://raw.gitmirror.com/Gitreceiver/Obsidian-pics/refs/heads/main/obsidian/202504162329503.png)
 
