@@ -113,7 +113,6 @@ tama add "Create login API endpoint" --parent 1 --desc "Needs JWT handling"
 ```shell
 tama status 1 done
 tama status 1.2 in-progress
-# 级联更新子任务/依赖任务状态
 # Cascade update subtasks/dependent tasks status
 tama status 1 done --propagate
 ```
@@ -212,16 +211,16 @@ uv pip install -e .
 ## MCP Server Usage
 Tama can be used as an MCP (Model Context Protocol) server, allowing other applications to interact with it programmatically. The MCP server provides the following tools:
 
-- `list_tasks`: List all tasks with optional status/priority filters in markdown format
-- `show_task`: Display detailed information about a specific task
-- `set_status`: Update task status with automatic propagation
-- `next_task`: Find the next actionable task
-- `add_task`: Create a new main task
-- `add_subtask`: Create a new subtask
-- `remove_item`: Remove a task or subtask with dependency cleanup
-- `add_dependency`: Add a dependency between tasks
-- `remove_dependency`: Remove a dependency between tasks
-- `check_dependencies`: Check for circular dependencies
+- `list_tasks`: List all tasks, optionally filter by status or priority, returns a markdown table.
+- `show_task`: Show details of a specific task or subtask by ID.
+- `set_status`: Set the status of a task or subtask.
+- `next_task`: Find the next actionable task.
+- `add_task`: Add a new main task.
+- `add_subtask`: Add a subtask to a main task.
+- `remove_item`: Remove a task or subtask, with dependency cleanup.
+- `add_dependency`: Add a dependency to a task or subtask.
+- `remove_dependency`: Remove a dependency from a task or subtask.
+- `check_dependencies`: Check for circular dependencies in all tasks.
 
 To start the server:
 ```shell
@@ -232,35 +231,24 @@ in your mcp client: (cline,cursor,claude)
 
 ```json
 {
-  "mcpServers": {
-    "TAMA-MCP-Server": {
-        "command": "uv",
-        "args": [
-            "--directory",
-            "/path/to/your/TAMA_MCP",
-            "run",
-            "python",
-            "-m",
-            "src.mcp_server"
-        ],
-        "disabled": false,
-        "transportType": "stdio",
-        "timeout": 60
-    },
-  }
+  "mcpServers": {
+    "TAMA-MCP-Server": {
+        "command": "uv",
+        "args": [
+            "--directory",
+            "/path/to/your/TAMA_MCP",
+            "run",
+            "python",
+            "-m",
+            "src.mcp_server"
+        ],
+        "disabled": false,
+        "transportType": "stdio",
+        "timeout": 60
+    },
+  }
 }
 ```
-
-This will start the Tama MCP server, which provides the following tools
-*   **get\_task:** Finds and returns a task or subtask by its ID.
-*   **find\_next\_task:** Finds the next available task to work on.
-*   **set\_task\_status:** Sets the status for a task or subtask.
-*   **add\_task:** Adds a new main task.
-*   **add\_subtask:** Adds a new subtask.
-*   **remove\_item:** Removes a subtask or a main task.
-*   **add_dependency:** Add a dependency between tasks
-*   **remove_dependency:** Remove a dependency between tasks
-*   **get\_tasks\_table\_report:** Generates a Markdown table representing the task structure.
 
 ## License
 

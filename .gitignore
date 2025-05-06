@@ -41,7 +41,7 @@ tasks/
 htmlcov/
 test.md
 generated_files/
-test/
+tests/
 
 # Cursor
 .cursor/rules/

@@ -215,23 +215,23 @@ uv pip install -e .
 
 Tama 可以用作 MCP（模型上下文协议）服务器，允许其他应用程序以编程方式与其交互。MCP 服务器提供以下工具：
 
-- `list_tasks`: 以 markdown 格式列出所有任务，支持状态/优先级过滤
-- `show_task`: 显示特定任务的详细信息
-- `set_status`: 更新任务状态，支持自动状态传播
-- `next_task`: 查找下一个可执行的任务
-- `add_task`: 创建新的主任务
-- `add_subtask`: 创建新的子任务
-- `remove_item`: 移除任务或子任务，自动清理依赖关系
-- `add_dependency`: 添加任务间的依赖关系
-- `remove_dependency`: 移除任务间的依赖关系
-- `check_dependencies`: 检查循环依赖
+- `list_tasks`：列出所有任务，可按状态或优先级过滤，返回 markdown 表格。
+- `show_task`：根据 ID 显示指定任务或子任务的详细信息。
+- `set_status`：设置任务或子任务的状态。
+- `next_task`：查找下一个可执行的任务。
+- `add_task`：添加新的主任务。
+- `add_subtask`：为主任务添加子任务。
+- `remove_item`：移除任务或子任务，并自动清理依赖。
+- `add_dependency`：为任务或子任务添加依赖。
+- `remove_dependency`：移除任务或子任务的依赖。
+- `check_dependencies`：检查所有任务中的循环依赖。
 
 要启动服务器，请运行：
 ```shell
 uv --directory /path/to/your/TAMA_MCP run python -m src.mcp_server
 ```
 
-客户端格式：
+客户端配置示例：
 
 ```json
 {
@@ -253,18 +253,6 @@ uv --directory /path/to/your/TAMA_MCP run python -m src.mcp_server
   }
 }
 ```
-
-这将启动 Tama MCP 服务器，它提供以下工具：
-
-*   **get_task:** 通过 ID 查找并返回任务或子任务。
-*   **find_next_task:** 查找下一个可用的任务。
-*   **set_task_status:** 设置任务或子任务的状态。
-*   **add_task:** 添加新的主任务。
-*   **add_subtask:** 添加新的子任务。
-*   **remove_item:** 移除子任务。
-*   **add_dependency:** 在任务间添加依赖
-*   **remove_dependency:** 在任务间删除依赖
-*   **get_tasks_table_report:** 生成表示任务结构的 Markdown 表格。
 
 ## 许可证
 
