@@ -115,7 +115,24 @@ def expand_and_save(parent_task_id_str: str) -> bool:
 
     # 7. Validate and process generated subtasks
     newly_added_subtasks: List[Subtask] = []
+    # 构建标题到完整ID的映射，便于依赖项转换
+    title_to_full_id = {}
     for i, sub_data in enumerate(generated_subtasks_data):
+        sub_id = next_sub_id + i
+        full_id = f"{parent_task.id}.{sub_id}"
+        title_to_full_id[sub_data['title']] = full_id
+
+    for i, sub_data in enumerate(generated_subtasks_data):
+        # 修正 dependencies 字段，将标题依赖转换为完整ID
+        if 'dependencies' in sub_data and sub_data['dependencies']:
+            new_deps = []
+            for dep in sub_data['dependencies']:
+                # 如果依赖项是标题字符串且能在 title_to_full_id 里找到，替换为完整 id
+                if isinstance(dep, str) and dep in title_to_full_id:
+                    new_deps.append(title_to_full_id[dep])
+                else:
+                    new_deps.append(dep)
+            sub_data['dependencies'] = new_deps
         try:
             # Add the essential parent_task_id and assign a new ID
             sub_data['parent_task_id'] = parent_task.id

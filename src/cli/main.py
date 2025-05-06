@@ -152,12 +152,10 @@ def add_command(
     # --- Add other options corresponding to core functions ---
     description: Optional[str] = typer.Option(None, "--desc", "-d", help="Description for the task/subtask."),
     priority: Optional[str] = typer.Option(None, "--priority", help=f"Priority ({', '.join(data_models.Priority.__args__)}). Default: {settings.DEFAULT_PRIORITY}"),
-    # TODO: Add dependency parsing later
-    # dependencies: Optional[List[str]] = typer.Option(None, "--depends", help="Comma-separated list of dependency IDs.") 
+    dependencies: List[str] = typer.Option([], "--depends", "-dps", help="One or more dependency IDs for this task or subtask. 可指定多个依赖ID。")
 ):
-    """Adds a new task, or adds a subtask if --parent is specified."""
+    """Adds a new task, or adds a subtask if --parent is specified. 支持初始化时自定义多个依赖。"""
     tasks_data = load_task_data()
-    
     # Validate priority if provided
     validated_priority = settings.DEFAULT_PRIORITY
     if priority:
@@ -166,8 +164,13 @@ def add_command(
             raise typer.Exit(code=1)
         validated_priority = priority
 
-    # TODO: Parse dependencies if provided
+    # 解析依赖参数，支持逗号分隔和空格分隔
     parsed_dependencies = []
+    for dep in dependencies:
+        if ',' in dep:
+            parsed_dependencies.extend([d.strip() for d in dep.split(',') if d.strip()])
+        else:
+            parsed_dependencies.append(dep)
 
     # --- Logic to differentiate task vs subtask --- 
     if parent_id:
@@ -229,62 +232,77 @@ def add_command(
 
 @app.command(name="remove", help="Remove a task or subtask.")
 def remove_command(
-    task_id: str = typer.Argument(..., help="The ID of the task or subtask to remove (e.g., '1' or '1.2').")
+    task_ids: List[str] = typer.Argument(..., help="The ID(s) of the task(s) or subtask(s) to remove (e.g., '1' or '1.2'). 支持多个ID。")
 ):
-    """删除指定的任务或子任务。"""
-    logger.info(f"Attempting to remove task/subtask ID: {task_id}")
+    """删除指定的一个或多个任务或子任务。"""
+    logger.info(f"Attempting to remove task/subtask IDs: {task_ids}")
     tasks_data = load_task_data()
-    
-    try:
-        # 使用统一的删除函数，现在返回成功状态和依赖项列表
-        success, dependent_items = core.remove_item(tasks_data.tasks, task_id)
-        
-        if success:
-            # 保存更改
-            save_task_data(tasks_data)
-            
-            # 显示删除成功信息
-            success_message = f"Successfully removed task/subtask with ID '{task_id}'"
-            
-            # 如果有依赖项，添加提示信息
-            if dependent_items:
-                dependent_info = "\n\n[yellow]The following tasks had dependencies on the removed task and have been automatically updated:[/yellow]"
-                for dep_id, dep_title in dependent_items:
-                    dependent_info += f"\n• Task {dep_id}: {dep_title}"
-                success_message += dependent_info
-            
-            # 显示完整信息
-            ui.console.print(Panel(
-                success_message,
-                title="[bold green]✅ Removal Complete[/bold green]",
-                border_style="green"
-            ))
-            logger.info(f"Successfully removed task/subtask ID: {task_id}")
+    # 兼容逗号分隔和空格分隔的任务ID
+    parsed_task_ids = []
+    for tid in task_ids:
+        if ',' in tid:
+            parsed_task_ids.extend([t.strip() for t in tid.split(',') if t.strip()])
         else:
-            # 优化输出
+            parsed_task_ids.append(tid)
+    all_success = True
+    failed_ids = []
+    for task_id in parsed_task_ids:
+        try:
+            # 使用统一的删除函数，现在返回成功状态和依赖项列表
+            success, dependent_items = core.remove_item(tasks_data.tasks, task_id)
+            if success:
+                # 保存更改
+                save_task_data(tasks_data)
+                # 显示删除成功信息
+                success_message = f"Successfully removed task/subtask with ID '{task_id}'"
+                # 如果有依赖项，添加提示信息
+                if dependent_items:
+                    dependent_info = "\n\n[yellow]The following tasks had dependencies on the removed task and have been automatically updated:[/yellow]"
+                    for dep_id, dep_title in dependent_items:
+                        dependent_info += f"\n• Task {dep_id}: {dep_title}"
+                    success_message += dependent_info
+                # 显示完整信息
+                ui.console.print(Panel(
+                    success_message,
+                    title="[bold green]✅ Removal Complete[/bold green]",
+                    border_style="green"
+                ))
+                logger.info(f"Successfully removed task/subtask ID: {task_id}")
+            else:
+                all_success = False
+                failed_ids.append(task_id)
+                # 优化输出
+                ui.console.print(Panel(
+                    f"[bold red]Failed to find task/subtask with ID '{task_id}' to remove.[/bold red]",
+                    title="[bold red]❌ Removal Failed[/bold red]",
+                    border_style="red"
+                ))
+                logger.warning(f"Task/subtask ID '{task_id}' not found for removal.")
+        except ValueError as e:
+            all_success = False
+            failed_ids.append(task_id)
             ui.console.print(Panel(
-                f"[bold red]Failed to find task/subtask with ID '{task_id}' to remove.[/bold red]",
-                title="[bold red]❌ Removal Failed[/bold red]",
+                f"[bold red]Invalid ID format: {e}[/bold red]",
+                title="[bold red]Error[/bold red]",
                 border_style="red"
             ))
-            logger.warning(f"Task/subtask ID '{task_id}' not found for removal.")
-            return
-            
-    except ValueError as e:
-        ui.console.print(Panel(
-            f"[bold red]Invalid ID format: {e}[/bold red]",
-            title="[bold red]Error[/bold red]",
-            border_style="red"
-        ))
+        except Exception as e:
+            all_success = False
+            failed_ids.append(task_id)
+            ui.console.print(Panel(
+                f"[bold red]An error occurred: {e}[/bold red]",
+                title="[bold red]Error[/bold red]",
+                border_style="red"
+            ))
+            logger.exception("Unexpected error in remove command")
+    if all_success:
         return
-    except Exception as e:
+    else:
         ui.console.print(Panel(
-            f"[bold red]An error occurred: {e}[/bold red]",
-            title="[bold red]Error[/bold red]",
-            border_style="red"
+            f"[bold yellow]部分任务/子任务删除失败: {', '.join(failed_ids)}，其余已删除（如有）。[/bold yellow]",
+            title="[bold yellow]⚠️ 部分删除失败[/bold yellow]",
+            border_style="yellow"
         ))
-        logger.exception("Unexpected error in remove command")
-        return
 
 
 # --- AI Powered Commands ---
@@ -459,37 +477,33 @@ def generate_report(
 @app.command(name="add-dep", help="Add a dependency to a task.")
 def add_dependency_command(
     task_id: str = typer.Argument(..., help="The ID of the task to add dependency to (e.g., '1' or '1.2')."),
-    dependency_id: str = typer.Argument(..., help="The ID of the task to add as dependency (e.g., '1' or '1.2').")
+    dependency_ids: list[str] = typer.Argument(..., help="One or more dependency IDs to add.")
 ):
-    """为指定任务添加依赖项。"""
-    logger.info(f"Adding dependency {dependency_id} to task {task_id}")
+    """为指定任务一次性添加一个或多个依赖项。"""
+    logger.info(f"Adding dependencies {dependency_ids} to task {task_id}")
     tasks_data = load_task_data()
-    
-    try:
-        success = core.add_dependency(tasks_data.tasks, task_id, dependency_id)
-        if success:
-            save_task_data(tasks_data)
-            ui.console.print(Panel(
-                f"Successfully added dependency '{dependency_id}' to task '{task_id}'",
-                title="[bold green]✅ Dependency Added[/bold green]",
-                border_style="green"
-            ))
-        else:
-            ui.console.print(Panel(
-                f"[bold red]Failed to add dependency '{dependency_id}' to task '{task_id}'.[/bold red]",
-                title="[bold red]❌ Add Dependency Failed[/bold red]",
-                border_style="red"
-            ))
-            return
-            
-    except Exception as e:
+    all_success = True
+    failed_deps = []
+    for dep_id in dependency_ids:
+        success = core.add_dependency(tasks_data.tasks, task_id, dep_id)
+        if not success:
+            all_success = False
+            failed_deps.append(dep_id)
+    if all_success:
+        save_task_data(tasks_data)
         ui.console.print(Panel(
-            f"[bold red]An error occurred: {e}[/bold red]",
-            title="[bold red]Error[/bold red]",
-            border_style="red"
+            f"Successfully added dependencies to task '{task_id}': {', '.join(dependency_ids)}",
+            title="[bold green]✅ Dependency(ies) Added[/bold green]",
+            border_style="green"
         ))
-        logger.exception("Unexpected error in add-dep command")
-        return
+    else:
+        if dependency_ids and len(dependency_ids) > len(failed_deps):
+            save_task_data(tasks_data)
+        ui.console.print(Panel(
+            f"[bold yellow]部分依赖添加失败: {', '.join(failed_deps)}，其余已添加。[/bold yellow]",
+            title="[bold yellow]⚠️ 部分依赖添加失败[/bold yellow]",
+            border_style="yellow"
+        ))
 
 @app.command(name="remove-dep", help="Remove a dependency from a task.")
 def remove_dependency_command(
