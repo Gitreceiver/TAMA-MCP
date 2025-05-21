@@ -51,6 +51,17 @@ source .venv/bin/activate
 
 (Alternatively, if you use conda ,using pip: `pip install -e .`)
 
+Once installed, the `tama` command will be available globally within your activated virtual environment.
+### Accessing `tama` Globally
+
+After following the installation steps, the `tama` command-line tool should be accessible globally *within the activated virtual environment*. You can run `tama --version` (or any other `tama` command) from any directory in your terminal.
+
+**Troubleshooting:**
+
+If you type `tama` and get a "command not found" error (or similar), try the following:
+*   **Ensure Virtual Environment is Active:** The most common reason is that the virtual environment where you installed `tama` is not active. Refer to step 2 of the "Installation & Setup" section to activate it. You usually see the environment name in your terminal prompt (e.g., `(.venv)`) when it's active.
+*   **Verify Installation Path:** In rare cases, the Python scripts directory might not be in your system's PATH. If you installed with `uv pip install -e .` or `pip install -e .`, the `tama` script is placed in the `bin` (Linux/macOS) or `Scripts` (Windows) directory of your virtual environment. When the virtual environment is active, this directory is automatically added to your PATH. If it's still not working, you might need to check your shell's PATH configuration or try reinstalling the package.
+*   **Reinstall:** Try reinstalling the package: `uv pip install -e . --force-reinstall`
 
 ## Configuration ⚙️
 Tama requires API keys for its AI features.
