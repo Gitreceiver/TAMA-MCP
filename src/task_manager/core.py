@@ -78,7 +78,11 @@ def find_next_task(tasks: List[Task]) -> Optional[Task]:
     # Build set of completed task/subtask IDs
     for t in tasks:
         if t.status == 'done':
-            completed_ids.add(t.id)
+            completed_ids.add(str(t.id))
+        if t.subtasks:
+            for st in t.subtasks:
+                if st.status == 'done':
+                    completed_ids.add(f"{t.id}.{st.id}")
             # Also add completed subtasks using "parent.sub" format
             # (Assuming subtask IDs are unique within parent only)
             # if t.subtasks:
@@ -96,8 +100,8 @@ def find_next_task(tasks: List[Task]) -> Optional[Task]:
         deps_met = True
         if task.dependencies:
             for dep_id in task.dependencies:
-                if isinstance(dep_id, int): # Dependency is a main task
-                    if dep_id not in completed_ids:
+                if (isinstance(dep_id, int) or (isinstance(dep_id, str) and dep_id.isdigit())) and '.' not in str(dep_id): # Dependency is a main task
+                    if str(dep_id) not in completed_ids:
                         deps_met = False
                         break
                 elif isinstance(dep_id, str) and '.' in dep_id: # Dependency is a subtask
@@ -111,7 +115,7 @@ def find_next_task(tasks: List[Task]) -> Optional[Task]:
                      deps_met = False
                      break
 
-        if deps_met and task.status != 'blocked':
+        if deps_met and task.status == 'pending' and task.status != 'blocked':
             eligible.append(task)
 
     if not eligible and all(task.status == 'blocked' for task in tasks):

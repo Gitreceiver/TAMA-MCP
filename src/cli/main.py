@@ -14,6 +14,7 @@ import task_manager.file_generator as file_generator
 import cli.ui as ui
 from config import settings
 from exceptions import ParentTaskNotFoundError # Import exception
+import git_utils
 
 # Configure logging
 # Set default console level to WARNING to reduce verbosity
@@ -101,7 +102,7 @@ def set_status_command(
     logger.info(f"Attempting to set status to '{new_status}' for ID: {task_id}")
     # Validate status input against the Literal type
     if new_status not in data_models.Status.__args__:
-        # Keep error message concise 
+        # Keep error message concise
         ui.console.print(Panel(f"[bold red]Invalid status '{new_status}'.[/bold red]\nValid statuses are: {', '.join(data_models.Status.__args__)}", title="[bold red]Error[/bold red]", border_style="red"))
         raise typer.Exit(code=1)
 
@@ -111,9 +112,9 @@ def set_status_command(
         ui.console.print(Panel(f"[bold red]Task '{task_id}' not found.[/bold red]", title="[bold red]Error[/bold red]", border_style="red"))
         raise typer.Exit(code=1)
 
-    # --- Get old status BEFORE updating --- 
+    # --- Get old status BEFORE updating ---
     old_status = item.status
-    # --- 
+    # ---
 
     # Prevent updating if status is the same
     if old_status == new_status:
@@ -124,11 +125,86 @@ def set_status_command(
         save_task_data(tasks_data)
         # --- Optimized Output with old/new status ---
         ui.console.print(Panel(f"Status for '{task_id}' changed from [yellow]'{old_status}'[/yellow] to [green]'{new_status}'[/green].", title="[bold green]✅ Status Updated[/bold green]", border_style="green"))
-        # --- 
+        # ---
     else:
         # Error message should have been logged by core.set_task_status
-        ui.console.print(Panel(f"[bold red]Failed to update status for '{task_id}'. Check logs.[/bold red]", title="[bold red]❌ Update Failed[/bold red]", border_style="red")) 
+        ui.console.print(Panel(f"[bold red]Failed to update status for '{task_id}'. Check logs.[/bold red]", title="[bold red]❌ Update Failed[/bold red]", border_style="red"))
         raise typer.Exit(code=1)
+
+
+@app.command(name="start", help="Start a task, setting status to 'in-progress' and creating a Git branch.")
+def start_task(
+    task_id: str = typer.Argument(..., help="The ID of the task to start."),
+    propagate: bool = typer.Option(settings.PROPAGATE_STATUS_CHANGE, "--propagate", help="Propagate status change to subtasks.")
+):
+    """Starts a task, sets its status, and creates a Git branch."""
+    logger.info(f"Starting task ID: {task_id}")
+    tasks_data = load_task_data()
+    item = core.get_task_by_id(tasks_data.tasks, task_id)
+    if not item:
+        ui.console.print(Panel(f"[bold red]Task '{task_id}' not found.[/bold red]", title="[bold red]Error[/bold red]", border_style="red"))
+        raise typer.Exit(code=1)
+
+    # Set status to 'in-progress'
+    new_status = "in-progress"
+    old_status = item.status
+
+    if old_status == new_status:
+        ui.console.print(Panel(f"Task '{task_id}' is already in progress.", title="Status Update", border_style="yellow"))
+        return  # Do not proceed to create branch
+    else:
+        if core.set_task_status(tasks_data.tasks, task_id, new_status, propagate=propagate):
+            save_task_data(tasks_data)
+            ui.console.print(Panel(f"Status for '{task_id}' changed from [yellow]'{old_status}'[/yellow] to [green]'{new_status}'[/green].", title="[bold green]✅ Status Updated[/bold green]", border_style="green"))
+        else:
+            ui.console.print(Panel(f"[bold red]Failed to update status for '{task_id}'. Check logs.[/bold red]", title="[bold red]❌ Update Failed[/bold red]", border_style="red"))
+            raise typer.Exit(code=1)
+
+    # Create Git branch
+    sanitized_title = "".join(c for c in item.title.lower() if c.isalnum() or c == ' ').replace(' ', '-')
+    branch_name = f"feature/task-{item.id}-{sanitized_title}"
+
+    git_utils.create_branch(branch_name)
+
+
+@app.command(name="complete", help="Complete a task, setting status to 'done' and optionally committing changes.")
+def complete_task(
+    task_id: str = typer.Argument(..., help="The ID of the task to complete."),
+    commit: bool = typer.Option(False, "--commit", "-c", help="Commit changes with a generated message."),
+    propagate: bool = typer.Option(settings.PROPAGATE_STATUS_CHANGE, "--propagate", help="Propagate status change to subtasks.")
+):
+    """Completes a task, sets status to 'done', and can commit changes."""
+    logger.info(f"Completing task ID: {task_id}")
+    tasks_data = load_task_data()
+    item = core.get_task_by_id(tasks_data.tasks, task_id)
+    if not item:
+        ui.console.print(Panel(f"[bold red]Task '{task_id}' not found.[/bold red]", title="[bold red]Error[/bold red]", border_style="red"))
+        raise typer.Exit(code=1)
+
+    # Set status to 'done'
+    new_status = "done"
+    old_status = item.status
+
+    if old_status == new_status:
+        ui.console.print(Panel(f"Task '{task_id}' is already done.", title="Status Update", border_style="yellow"))
+        return  # Do not proceed further if already done
+    else:
+        if core.set_task_status(tasks_data.tasks, task_id, new_status, propagate=propagate):
+            save_task_data(tasks_data)
+            ui.console.print(Panel(f"Status for '{task_id}' changed from [yellow]'{old_status}'[/yellow] to [green]'{new_status}'[/green].", title="[bold green]✅ Status Updated[/bold green]", border_style="green"))
+        else:
+            ui.console.print(Panel(f"[bold red]Failed to update status for '{task_id}'. Check logs.[/bold red]", title="[bold red]❌ Update Failed[/bold red]", border_style="red"))
+            raise typer.Exit(code=1)
+
+    # Commit changes if requested
+    if commit:
+        commit_message = f"feat: Complete task {item.id} - {item.title}"
+        if item.description:
+            commit_message += f"\n\n{item.description}"
+
+        git_utils.commit_changes(commit_message)
+
+    ui.console.print(Panel(f"Successfully completed task '{task_id}'.", title="[bold green]✅ Task Completed[/bold green]", border_style="green"))
 
 
 @app.command(name="next", help="Show the next eligible task to work on.")
