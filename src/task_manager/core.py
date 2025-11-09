@@ -190,9 +190,6 @@ def set_task_status(tasks: List[Task], task_id_str: str, new_status: str, propag
             if all_subs_done and parent_task.status != 'done':
                 logger.info(f"All subtasks of Task {parent_task.id} are done. Setting parent to done.")
                 parent_task.status = 'done'
-                # 递归检查父任务的父任务
-                if parent_task.parent_task_id:  # 如果父任务也是子任务
-                    set_task_status(tasks, str(parent_task.parent_task_id), 'done', propagate=propagate)
 
     return True
 

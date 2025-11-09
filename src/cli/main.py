@@ -50,7 +50,7 @@ def load_task_data() -> data_models.TasksData:
 def save_task_data(tasks_data: data_models.TasksData):
     """Saves task data, handling potential errors."""
     try:
-        storage.save_tasks(tasks_data)
+        storage.save_tasks(tasks_data, file_path=settings.TASKS_JSON_PATH)
         logger.debug(f"Saved {len(tasks_data.tasks)} tasks.")
     except Exception as e:
         ui.console.print(f"[bold red]Error saving tasks: {e}[/]")

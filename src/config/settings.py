@@ -21,6 +21,9 @@ DEEPSEEK_GENERAL_MODEL = os.getenv('DEEPSEEK_GENERAL_MODEL', 'deepseek-chat')
 # 推理/编码模型
 DEEPSEEK_REASONING_MODEL = os.getenv('DEEPSEEK_REASONING_MODEL', 'deepseek-reasoner')
 
+# --- 数据库设置 ---
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///:memory:')
+
 # --- AI 通用设置 ---
 # AI 响应最大 token 数
 AI_MAX_TOKENS = int(os.getenv('AI_MAX_TOKENS', 8192))
@@ -65,6 +68,7 @@ class Settings:
         self.DEEPSEEK_BASE_URL = DEEPSEEK_BASE_URL
         self.DEEPSEEK_GENERAL_MODEL = DEEPSEEK_GENERAL_MODEL
         self.DEEPSEEK_REASONING_MODEL = DEEPSEEK_REASONING_MODEL
+        self.DATABASE_URL = DATABASE_URL
         self.AI_MAX_TOKENS = AI_MAX_TOKENS
         self.AI_TEMPERATURE = AI_TEMPERATURE
         self.TASKS_JSON_PATH = TASKS_JSON_PATH
