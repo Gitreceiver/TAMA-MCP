@@ -2,14 +2,17 @@ import logging
 import os
 from typing import List, Optional, Union
 from collections import defaultdict
+from enum import Enum
 
-# Use absolute imports
-# from .data_models import Task, Subtask, Status, Priority, Dependency # Relative
-# from .storage import load_tasks, save_tasks # Relative
-# from ..config.settings import settings # Relative
-# from ..exceptions import ParentTaskNotFoundError # Relative
+class LinkResult(Enum):
+    SUCCESS = "success"
+    NOT_FOUND = "not_found"
+    ALREADY_EXISTS = "already_exists"
+
+
+# Using relative imports for robustness within the installed package.
 from task_manager.data_models import Task, Subtask, Status, Priority, Dependency
-from task_manager.storage import load_tasks, save_tasks
+from task_manager.storage_sqlite import load_tasks, save_tasks
 from config import settings
 from exceptions import ParentTaskNotFoundError
 from functools import lru_cache
@@ -600,3 +603,63 @@ def _would_create_cycle(tasks: List[Task], task_id: str, new_deps: List[str]) ->
         return False
         
     return has_cycle(task_id)
+
+def link_file_to_task(tasks: List[Task], task_id_str: str, file_path: str) -> LinkResult:
+    """Links a file path to a specific task or subtask."""
+    logger.info(f"Linking file '{file_path}' to task/subtask '{task_id_str}'")
+
+    item = get_task_by_id(tasks, task_id_str)
+
+    if not item:
+        logger.error(f"Task/subtask with ID '{task_id_str}' not found.")
+        return LinkResult.NOT_FOUND
+
+    if file_path in item.linked_files:
+        logger.warning(f"File '{file_path}' is already linked to task/subtask '{task_id_str}'.")
+        return LinkResult.ALREADY_EXISTS
+
+    item.linked_files.append(file_path)
+    logger.debug(f"Successfully added link for '{task_id_str}'.")
+    return LinkResult.SUCCESS
+
+def unlink_file_from_task(tasks: List[Task], task_id_str: str, file_path: str) -> bool:
+    """Unlinks a file path from a specific task or subtask."""
+    logger.info(f"Unlinking file '{file_path}' from task/subtask '{task_id_str}'")
+
+    item = get_task_by_id(tasks, task_id_str)
+
+    if not item:
+        logger.error(f"Task/subtask with ID '{task_id_str}' not found.")
+        return False
+
+    # Normalize file paths for comparison
+    abs_file_path = os.path.abspath(file_path)
+
+    # Check if the absolute path or the provided path is in the list
+    if abs_file_path in item.linked_files:
+        item.linked_files.remove(abs_file_path)
+        logger.debug(f"Successfully removed link for '{task_id_str}'.")
+        return True
+    elif file_path in item.linked_files:
+        item.linked_files.remove(file_path)
+        logger.debug(f"Successfully removed link for '{task_id_str}'.")
+        return True
+    else:
+        logger.warning(f"File '{file_path}' is not linked to task/subtask '{task_id_str}'.")
+        return False
+
+
+def find_tasks_by_file(tasks: List[Task], file_path: str) -> List[Union[Task, Subtask]]:
+    """Finds all tasks and subtasks linked to a specific file."""
+    logger.info(f"Finding tasks linked to file: {file_path}")
+    linked_items = []
+    abs_file_path = os.path.abspath(file_path)
+
+    for task in tasks:
+        if abs_file_path in task.linked_files:
+            linked_items.append(task)
+        for subtask in task.subtasks:
+            if abs_file_path in subtask.linked_files:
+                linked_items.append(subtask)
+
+    return linked_items

@@ -29,7 +29,7 @@ def test_set_subtask_status_succeeds(mock_tasks_data, mocker):
     assert "Status for '3.1' changed" in result.stdout
     mock_get_task.assert_called_once_with(mock_tasks_data.tasks, "3.1")
     set_status_mock.assert_called_once_with(mock_tasks_data.tasks, "3.1", "done", propagate=False)
-    save_mock.assert_called_once_with(mock_tasks_data, file_path=settings.TASKS_JSON_PATH)
+    save_mock.assert_called_once_with(mock_tasks_data)
 
 def test_set_subtask_status_updates_parent_when_all_subtasks_done(mock_tasks_data, mocker):
     """
@@ -50,7 +50,7 @@ def test_set_subtask_status_updates_parent_when_all_subtasks_done(mock_tasks_dat
     assert "Status for '3.1' changed" in result.stdout
     mock_get_task.assert_called_once_with(mock_tasks_data.tasks, "3.1")
     set_status_mock.assert_called_once_with(mock_tasks_data.tasks, "3.1", "done", propagate=False)
-    save_mock.assert_called_once_with(mock_tasks_data, file_path=settings.TASKS_JSON_PATH)
+    save_mock.assert_called_once_with(mock_tasks_data)
 
     # To properly test the parent update, we would need to inspect the state of mock_tasks_data
     # after the call to set_task_status. This requires a more complex mock setup, so for now
@@ -70,7 +70,7 @@ def test_set_status_command_success(mock_tasks_data, mocker):
     assert "Status for '2' changed" in result.stdout
     mock_get_task.assert_called_once_with(mock_tasks_data.tasks, "2")
     set_status_mock.assert_called_once_with(mock_tasks_data.tasks, "2", "done", propagate=False)
-    save_mock.assert_called_once_with(mock_tasks_data, file_path=settings.TASKS_JSON_PATH)
+    save_mock.assert_called_once_with(mock_tasks_data)
 
 def test_set_status_command_invalid_status_value(mock_tasks_data):
     """Test set-status with an invalid status value."""
@@ -103,7 +103,7 @@ def test_set_status_command_subtask_success(mock_tasks_data, mocker):
     assert "Status for '3.1' changed" in result.stdout
     mock_get_task.assert_called_once_with(mock_tasks_data.tasks, "3.1")
     set_status_mock.assert_called_once_with(mock_tasks_data.tasks, "3.1", "done", propagate=False)
-    save_mock.assert_called_once_with(mock_tasks_data, file_path=settings.TASKS_JSON_PATH)
+    save_mock.assert_called_once_with(mock_tasks_data)
 
 def test_set_status_command_with_propagate(mock_tasks_data, mocker):
     """Test the set-status command with the --propagate flag."""
@@ -118,7 +118,7 @@ def test_set_status_command_with_propagate(mock_tasks_data, mocker):
     assert "Status for '3' changed" in result.stdout
     mock_get_task.assert_called_once_with(mock_tasks_data.tasks, "3")
     set_status_mock.assert_called_once_with(mock_tasks_data.tasks, "3", "done", propagate=True)
-    save_mock.assert_called_once_with(mock_tasks_data, file_path=settings.TASKS_JSON_PATH)
+    save_mock.assert_called_once_with(mock_tasks_data)
 
 def test_set_status_command_unchanged(mock_tasks_data, mocker):
     """Test the set-status command when the status is not changed."""
