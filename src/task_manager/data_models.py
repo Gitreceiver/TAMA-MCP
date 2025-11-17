@@ -16,6 +16,7 @@ class Subtask(BaseModel):
     details: Optional[str] = None
     test_strategy: Optional[str] = Field(default=None, alias="testStrategy")
     parent_task_id: Optional[int] = None  # Added for easier reference
+    linked_files: List[str] = []
 
 class Task(BaseModel):
     id: int = Field(..., gt=0)
@@ -27,6 +28,7 @@ class Task(BaseModel):
     details: Optional[str] = None
     test_strategy: Optional[str] = Field(default=None, alias="testStrategy")
     subtasks: List[Subtask] = []
+    linked_files: List[str] = []
 
     # Ensure subtask parent_task_id is set correctly using a model validator
     @model_validator(mode='before')

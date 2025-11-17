@@ -12,12 +12,13 @@ def _build_dependency_graph(tasks: List[Task]) -> Dict[str, Set[str]]:
     """Builds a graph representing task dependencies."""
     graph = defaultdict(set)
     task_map = {str(t.id): t for t in tasks}
+
     for task in tasks:
         task_id_str = str(task.id)
         if task.subtasks:
             for subtask in task.subtasks:
                 subtask_id_str = f"{task.id}.{subtask.id}"
-                task_map[subtask_id_str] = subtask # Add subtasks to map
+                task_map[subtask_id_str] = subtask
 
     for item_id_str, item in task_map.items():
         if item.dependencies:
@@ -44,28 +45,31 @@ def find_circular_dependencies(tasks: List[Task]) -> Optional[List[str]]:
     """
     logger.debug("Checking for circular dependencies...")
     graph = _build_dependency_graph(tasks)
-    path: Set[str] = set() # Nodes currently in the recursion stack for DFS
+    path: List[str] = [] # Use list to maintain order
     visited: Set[str] = set() # Nodes that have been fully explored
 
     def dfs(node: str) -> Optional[List[str]]:
-        path.add(node)
+        path.append(node)
         visited.add(node)
         logger.debug(f"DFS visiting node: {node}, current path: {path}")
 
-        for neighbor in graph.get(node, set()):
+        for neighbor in sorted(list(graph.get(node, set()))): # Sort for consistent order
+            if neighbor in path: # Cycle detected
+                logger.warning(f"Circular dependency detected involving: {node} -> {neighbor}")
+                # Reconstruct cycle from path
+                try:
+                    cycle_start_index = path.index(neighbor)
+                    cycle_path = path[cycle_start_index:] + [neighbor]
+                    return cycle_path
+                except ValueError:
+                    return path + [neighbor] # Should not happen
+
             if neighbor not in visited:
                 result = dfs(neighbor)
                 if result: # Cycle detected downstream
                     return result
-            elif neighbor in path:
-                # Cycle detected! Reconstruct cycle path (simplified)
-                logger.warning(f"Circular dependency detected involving: {node} -> {neighbor}")
-                # Simple reconstruction - might not be the exact minimal cycle path
-                # but indicates involvement. A more complex algorithm is needed for exact path.
-                cycle_path_approx = list(path) + [neighbor]
-                return cycle_path_approx
 
-        path.remove(node) # Backtrack
+        path.pop() # Backtrack
         return None
 
     all_nodes = list(graph.keys()) # Check all nodes as starting points

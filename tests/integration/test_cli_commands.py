@@ -151,8 +151,10 @@ def test_set_status_command_invalid_id(mock_tasks_data, mocker):
     get_task_mock.assert_called_once_with(mock_tasks_data.tasks, "99")
     save_mock.assert_not_called() # Should not save if task not found
 
-def test_next_command(mock_tasks_data, mocker):
+@patch('src.cli.main.storage.load_tasks')
+def test_next_command(mock_load_tasks, mock_tasks_data, mocker):
      """Test the next command finds a task."""
+     mock_load_tasks.return_value = mock_tasks_data
      # Mock find_next_task specifically for this test
      # Assume Task 3 is the next eligible (high priority, depends on done Task 1)
      task3 = next(t for t in mock_tasks_data.tasks if t.id == 3)
@@ -162,8 +164,10 @@ def test_next_command(mock_tasks_data, mocker):
      assert "Next eligible task:" in result.stdout
      assert "Details for Task 3: Task 3" in result.stdout # Check if details are shown
 
-def test_next_command_no_eligible(mocker):
+@patch('src.cli.main.storage.load_tasks')
+def test_next_command_no_eligible(mock_load_tasks, mock_tasks_data, mocker):
      """Test the next command when no tasks are eligible."""
+     mock_load_tasks.return_value = mock_tasks_data
      # Mock find_next_task to return None
      mocker.patch('src.cli.main.core.find_next_task', return_value=None)
      result = runner.invoke(app, ["next"])
@@ -219,8 +223,9 @@ def test_expand_command_success(mock_load_tasks, mock_get_task_by_id, mock_expan
 
     result = runner.invoke(app, ["expand", "3"])
 
-    assert "cannot expand" in result.stdout
-    mock_expand_save.assert_not_called()
+    assert result.exit_code == 0
+    assert "Successfully expanded task" in result.stdout
+    mock_expand_save.assert_called_once_with("3")
 
 @patch('src.cli.main.expansion.expand_and_save')
 @patch('src.cli.main.core.get_task_by_id') # Add mock
@@ -236,8 +241,9 @@ def test_expand_command_fail(mock_load_tasks, mock_get_task_by_id, mock_expand_s
 
     result = runner.invoke(app, ["expand", "3"])
 
-    assert "cannot expand" in result.stdout
-    mock_expand_save.assert_not_called()
+    assert result.exit_code == 1
+    assert "Failed to expand task" in result.stdout
+    mock_expand_save.assert_called_once_with("3")
 
 def test_expand_command_invalid_id_format(mock_tasks_data):
     """Test expand command with invalid ID format (subtask)."""
@@ -318,8 +324,10 @@ def test_remove_command_not_found(mock_load_tasks, mock_get_task_by_id, mock_tas
 # --- Tests for New Commands (Deps, Complexity, File Gen) ---
 
 @patch('src.cli.main.dependencies.find_circular_dependencies')
-def test_check_deps_command_no_cycle(mock_find_cycle, mock_tasks_data):
+@patch('src.cli.main.storage.load_tasks')
+def test_check_deps_command_no_cycle(mock_load_tasks, mock_find_cycle, mock_tasks_data):
     """Test check-deps when no cycle is found."""
+    mock_load_tasks.return_value = mock_tasks_data
     mock_find_cycle.return_value = None
     result = runner.invoke(app, ["deps"])
     assert result.exit_code == 0
@@ -327,8 +335,10 @@ def test_check_deps_command_no_cycle(mock_find_cycle, mock_tasks_data):
     mock_find_cycle.assert_called_once()
 
 @patch('src.cli.main.dependencies.find_circular_dependencies')
-def test_check_deps_command_cycle_found(mock_find_cycle, mock_tasks_data):
+@patch('src.cli.main.storage.load_tasks')
+def test_check_deps_command_cycle_found(mock_load_tasks, mock_find_cycle, mock_tasks_data):
     """Test check-deps when a cycle is found."""
+    mock_load_tasks.return_value = mock_tasks_data
     mock_find_cycle.return_value = ['1', '2', '1'] # Simulate finding a cycle
     result = runner.invoke(app, ["deps"])
     assert result.exit_code == 1 # Should exit with error on cycle
@@ -336,10 +346,11 @@ def test_check_deps_command_cycle_found(mock_find_cycle, mock_tasks_data):
     assert "1 -> 2 -> 1" in result.stdout
     mock_find_cycle.assert_called_once()
 
+@patch('src.cli.main.storage.save_tasks')
 @patch('src.cli.main.file_generator.generate_file_from_task')
 @patch('src.cli.main.core.get_task_by_id')
 @patch('src.cli.main.storage.load_tasks') # Restore mock
-def test_generate_file_command_success(mock_load_tasks, mock_get_task_by_id, mock_generate, mock_tasks_data, tmp_path):
+def test_generate_file_command_success(mock_load_tasks, mock_get_task_by_id, mock_generate, mock_save, mock_tasks_data, tmp_path):
     """Test generate-file command success."""
     mock_load_tasks.return_value = mock_tasks_data # Use mock
     task1 = next((t for t in mock_tasks_data.tasks if t.id == 1), None)
@@ -350,17 +361,18 @@ def test_generate_file_command_success(mock_load_tasks, mock_get_task_by_id, moc
     result = runner.invoke(app, ["gen-file", "1"])
     assert result.exit_code == 0, result.stdout
     assert "Generating file for task 'Task 1'" in result.stdout
-    assert "Successfully generated file" in result.stdout
-    assert generated_file_path.name in result.stdout
+    assert "Successfully generated and linked file" in result.stdout
+    assert str(generated_file_path) in result.stdout.replace('\n', '')
     mock_generate.assert_called_once()
     call_args, call_kwargs = mock_generate.call_args
     assert call_args[0].id == 1
     assert call_kwargs['output_dir'] is None
 
+@patch('src.cli.main.storage.save_tasks')
 @patch('src.cli.main.file_generator.generate_file_from_task')
 @patch('src.cli.main.core.get_task_by_id')
 @patch('src.cli.main.storage.load_tasks') # Restore mock
-def test_generate_file_command_custom_dir(mock_load_tasks, mock_get_task_by_id, mock_generate, mock_tasks_data, tmp_path):
+def test_generate_file_command_custom_dir(mock_load_tasks, mock_get_task_by_id, mock_generate, mock_save, mock_tasks_data, tmp_path):
     """Test generate-file command with custom output directory."""
     mock_load_tasks.return_value = mock_tasks_data # Use mock
     task1 = next((t for t in mock_tasks_data.tasks if t.id == 1), None)
@@ -371,8 +383,8 @@ def test_generate_file_command_custom_dir(mock_load_tasks, mock_get_task_by_id, 
     mock_generate.return_value = str(generated_file_path)
     result = runner.invoke(app, ["gen-file", "1", "--output-dir", str(custom_dir)])
     assert result.exit_code == 0, result.stdout
-    assert "Successfully generated file" in result.stdout
-    assert generated_file_path.name in result.stdout
+    assert "Successfully generated and linked file" in result.stdout
+    assert str(generated_file_path) in result.stdout.replace('\n', '')
     mock_generate.assert_called_once()
     call_args, call_kwargs = mock_generate.call_args
     assert call_args[0].id == 1

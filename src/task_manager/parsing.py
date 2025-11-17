@@ -25,8 +25,8 @@ def parse_prd_and_save(prd_filepath: str) -> bool:
 
     # 1. Read PRD file content
     try:
-        with open(prd_filepath, 'r', encoding='utf-8') as f:
-            prd_content = f.read()
+        with open(prd_filepath, 'rb') as f:
+            prd_content = f.read().decode('utf-8')
         if not prd_content.strip():
             logger.error(f"PRD file '{prd_filepath}' is empty.")
             return False
@@ -82,7 +82,7 @@ def parse_prd_and_save(prd_filepath: str) -> bool:
         tasks_data = TasksData.model_validate(generated_data)
         logger.info(f"Successfully validated generated task data for project '{tasks_data.meta.project_name}'. Found {len(tasks_data.tasks)} top-level tasks.")
     except Exception as e: # Catch Pydantic's ValidationError and potentially others
-        logger.exception(f"Validation failed for AI-generated task data: {e}", exc_info=settings.DEBUG)
+        logger.exception(f"AI Response Error: {e}", exc_info=settings.DEBUG)
         logger.debug(f"Data that failed validation: {generated_data}")
         return False
 
