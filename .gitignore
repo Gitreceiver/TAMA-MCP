@@ -42,7 +42,10 @@ htmlcov/
 test.md
 generated_files/
 tests/
+README_zh_back.md
+README_back.md
 
 # Cursor
 .cursor/rules/
 .clinerules
+.claude

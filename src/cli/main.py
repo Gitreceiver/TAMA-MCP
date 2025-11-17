@@ -3,7 +3,7 @@ from typing import List, Optional
 import logging
 import os
 from rich.panel import Panel
-import task_manager.storage as storage
+import task_manager.storage_sqlite as storage
 import task_manager.core as core
 import task_manager.data_models as data_models
 import task_manager.parsing as parsing
@@ -38,10 +38,6 @@ def load_task_data() -> data_models.TasksData:
         tasks_data = storage.load_tasks()
         logger.debug(f"Loaded {len(tasks_data.tasks)} tasks.")
         return tasks_data
-    except FileNotFoundError:
-        logger.warning(f"Tasks file '{settings.TASKS_JSON_PATH}' not found. Starting with empty list.")
-        # Return default structure if file not found
-        return data_models.TasksData(meta=data_models.MetaData(projectName=settings.PROJECT_NAME), tasks=[])
     except Exception as e:
         ui.console.print(f"[bold red]Error loading tasks: {e}[/]")
         logger.exception("Failed to load tasks.", exc_info=settings.DEBUG)
@@ -50,7 +46,7 @@ def load_task_data() -> data_models.TasksData:
 def save_task_data(tasks_data: data_models.TasksData):
     """Saves task data, handling potential errors."""
     try:
-        storage.save_tasks(tasks_data, file_path=settings.TASKS_JSON_PATH)
+        storage.save_tasks(tasks_data)
         logger.debug(f"Saved {len(tasks_data.tasks)} tasks.")
     except Exception as e:
         ui.console.print(f"[bold red]Error saving tasks: {e}[/]")
@@ -65,6 +61,12 @@ def list_tasks(
 ):
     """Lists tasks with optional filtering."""
     logger.info(f"Listing tasks with filters: status='{status}', priority='{priority}'")
+    if status and status not in data_models.Status.__args__:
+        ui.console.print(Panel(f"[bold red]Invalid status '{status}'.[/bold red]\nValid statuses are: {', '.join(data_models.Status.__args__)}", title="[bold red]Error[/bold red]", border_style="red"))
+        raise typer.Exit(code=1)
+    if priority and priority not in data_models.Priority.__args__:
+        ui.console.print(Panel(f"[bold red]Invalid priority '{priority}'.[/bold red]\nValid priorities are: {', '.join(data_models.Priority.__args__)}", title="[bold red]Error[/bold red]", border_style="red"))
+        raise typer.Exit(code=1)
     tasks_data = load_task_data()
     ui.display_tasks_table(tasks_data.tasks, status_filter=status, priority_filter=priority)
 
@@ -77,6 +79,8 @@ def show(
     tasks_data = load_task_data()
     item = core.get_task_by_id(tasks_data.tasks, task_id)
     if item:
+        import rich
+        rich.print(f"DEBUG in show_command: {item.linked_files}")
         # Also display complexity
         ui.display_task_details(item)
         if isinstance(item, data_models.Task):
@@ -400,7 +404,7 @@ def parse_prd_command(
             raise typer.Exit(code=1)
         
         # Optimized Output Start Message
-        ui.console.print(Panel(f"Parsing PRD file '{prd_filepath}'...", title="🤖 PRD Parsing", border_style="blue")) 
+        ui.console.print(Panel(f"Parsing PRD file '{prd_filepath}'...", title="🤖 PRD Parsing", border_style="blue"))
         success = parsing.parse_prd_and_save(prd_filepath)
 
         # Optimized Output Final Message
@@ -441,12 +445,9 @@ def expand_command(
     if not task:
         ui.console.print(Panel(f"[bold red]Task '{task_id}' not found.[/bold red]", title="[bold red]Error[/bold red]", border_style="red"))
         raise typer.Exit(code=1)
-    if not isinstance(task, data_models.Task):
-         ui.console.print(Panel(f"[bold red]ID '{task_id}' refers to a subtask, cannot expand.[/bold red]", title="[bold red]Error[/bold red]", border_style="red"))
-         raise typer.Exit(code=1)
 
     # Optimized Output Start Message
-    ui.console.print(Panel(f"Expanding task '{task_id}' ({task.title}) using AI...", title="🤖 Task Expansion", border_style="blue")) 
+    ui.console.print(Panel(f"Expanding task '{task_id}' ({task.title}) using AI...", title="🤖 Task Expansion", border_style="blue"))
     success = expansion.expand_and_save(task_id)
 
     # Optimized Output Final Message
@@ -506,11 +507,97 @@ def generate_file_command(
     generated_path = file_generator.generate_file_from_task(task, output_dir=output_dir)
 
     if generated_path:
-        ui.console.print(f"[bold green]✅ Successfully generated file:[/bold green] {os.path.abspath(generated_path)}")
+        if core.link_file_to_task(tasks_data.tasks, task_id, os.path.abspath(generated_path)):
+            save_task_data(tasks_data)
+            ui.console.print(f"[bold green]✅ Successfully generated and linked file: {os.path.abspath(generated_path)}[/bold green]")
+        else:
+            # This case might happen if the file is already linked, which is unlikely for a newly generated file.
+            ui.console.print(f"[bold green]✅ Successfully generated file: {os.path.abspath(generated_path)}[/bold green]")
+            ui.console.print(f"[bold yellow]⚠️ Could not auto-link the file to the task. It might already be linked.[/bold yellow]")
         raise typer.Exit(code=0)
     else:
         ui.console.print(f"[bold red]❌ Failed to generate file for task '{task_id}'. Check logs.[/bold red]")
         raise typer.Exit(code=1)
+
+
+@app.command(name="link", help="Link a file to a task.")
+def link_file_to_task_command(
+    task_id: str = typer.Argument(..., help="The ID of the task to link the file to (e.g., '1' or '1.2')."),
+    file_path: str = typer.Argument(..., help="The path to the file to link.")
+):
+    """Links a file to a specified task."""
+    logger.info(f"Attempting to link file '{file_path}' to task ID: {task_id}")
+
+    if not os.path.exists(file_path):
+        ui.console.print(f"[bold red]Error:[/bold red] File not found at '{file_path}'")
+        raise typer.Exit(code=1)
+
+    tasks_data = load_task_data()
+
+    result = core.link_file_to_task(tasks_data.tasks, task_id, os.path.abspath(file_path))
+
+    if result == core.LinkResult.SUCCESS:
+        save_task_data(tasks_data)
+        ui.console.print(f"[bold green]✅ Successfully linked file '{os.path.basename(file_path)}' to task '{task_id}'.[/bold green]")
+    elif result == core.LinkResult.ALREADY_EXISTS:
+        ui.console.print(f"[bold yellow]⚠️ File '{os.path.basename(file_path)}' is already linked to task '{task_id}'.[/bold yellow]")
+    elif result == core.LinkResult.NOT_FOUND:
+        ui.console.print(f"[bold red]❌ Failed to link file. Task '{task_id}' not found.[/bold red]")
+        raise typer.Exit(code=1)
+    else:
+        ui.console.print(f"[bold red]❌ Failed to link file due to an unknown error.[/bold red]")
+        raise typer.Exit(code=1)
+
+
+@app.command(name="unlink", help="Unlink a file from a task.")
+def unlink_file_from_task_command(
+    task_id: str = typer.Argument(..., help="The ID of the task to unlink the file from (e.g., '1' or '1.2')."),
+    file_path: str = typer.Argument(..., help="The path to the file to unlink.")
+):
+    """Unlinks a file from a specified task."""
+    logger.info(f"Attempting to unlink file '{file_path}' from task ID: {task_id}")
+
+    tasks_data = load_task_data()
+
+    # The core function will need to handle absolute paths for consistency
+    if core.unlink_file_from_task(tasks_data.tasks, task_id, os.path.abspath(file_path)):
+        save_task_data(tasks_data)
+        ui.console.print(f"[bold green]✅ Successfully unlinked file '{os.path.basename(file_path)}' from task '{task_id}'.[/bold green]")
+    else:
+        # Core function logs the specific error
+        ui.console.print(f"[bold red]❌ Failed to unlink file. See logs for details.[/bold red]")
+        raise typer.Exit(code=1)
+
+
+@app.command(name="find-task", help="Find tasks linked to a file.")
+def find_task_by_file_command(
+    file_path: str = typer.Argument(..., help="The path to the file to find linked tasks for.")
+):
+    """Finds and displays tasks linked to a specific file."""
+    logger.info(f"Attempting to find tasks linked to file: {file_path}")
+
+    if not os.path.exists(file_path):
+        ui.console.print(f"[bold red]Error:[/bold red] File not found at '{file_path}'")
+        raise typer.Exit(code=1)
+
+    tasks_data = load_task_data()
+    linked_items = core.find_tasks_by_file(tasks_data.tasks, file_path)
+    print(f"DEBUG: Found {len(linked_items)} linked items.")
+    for item in linked_items:
+        print(f"DEBUG: Item: {item.title}")
+
+    if not linked_items:
+        ui.console.print(f"No tasks found linked to '{os.path.basename(file_path)}'.")
+        raise typer.Exit(code=0)
+
+    ui.console.print(f"[bold]Tasks linked to '{os.path.basename(file_path)}':[/bold]")
+    for item in linked_items:
+        if isinstance(item, data_models.Task):
+            ui.console.print(f"  - Task {item.id}: {item.title}")
+        elif isinstance(item, data_models.Subtask):
+            ui.console.print(f"  - Subtask {item.parent_task_id}.{item.id}: {item.title}")
+
+
 
 @app.command(name="report", help="Generate a report (Markdown table or Mermaid diagram).")
 def generate_report(

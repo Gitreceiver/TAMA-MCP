@@ -34,6 +34,10 @@ def get_dep_str(deps: List[Union[int, str]]) -> str:
 
 def display_tasks_table(tasks: List[Task], status_filter: Optional[str] = None, priority_filter: Optional[str] = None):
     """Display tasks in a rich table format with optional filters."""
+    if not tasks:
+        console.print("\n[bold]No tasks found.[/bold]\n")
+        return
+
     table = Table(show_header=True, header_style="bold", title="Tasks") # Add a main title for clarity
     table.add_column("ID", style="dim")
     table.add_column(header="Title") # Explicitly use header= parameter
@@ -43,36 +47,45 @@ def display_tasks_table(tasks: List[Task], status_filter: Optional[str] = None, 
     table.add_column("Subtasks", justify="right")
 
     for task in tasks:
-        # Apply filters if specified
-        if status_filter and task.status != status_filter:
-            continue
-        if priority_filter and task.priority != priority_filter:
-            continue
+        # Filter subtasks first
+        filtered_subtasks = []
+        if task.subtasks:
+            filtered_subtasks = [
+                st for st in task.subtasks
+                if (not status_filter or st.status == status_filter)
+            ]
 
-        # Format status with color
-        status_str = f"[{get_status_color(task.status)}]{task.status}[/]"
-        priority_str = f"[{get_priority_color(task.priority)}]{task.priority}[/]"
-        
-        table.add_row(
-            str(task.id),
-            task.title,
-            status_str,
-            priority_str,
-            get_dep_str(task.dependencies),
-            str(len(task.subtasks))
-        )
+        # Determine if the main task should be shown
+        task_matches = (not status_filter or task.status == status_filter) and \
+                       (not priority_filter or task.priority == priority_filter)
 
-        # Add subtasks with indentation if they exist
-        for subtask in task.subtasks:
-            subtask_status = f"[{get_status_color(subtask.status)}]{subtask.status}[/]"
+        # Show the task if it matches or if it has subtasks that match
+        if task_matches or filtered_subtasks:
+            # Format status with color
+            status_str = f"[{get_status_color(task.status)}]{task.status}[/]"
+            priority_str = f"[{get_priority_color(task.priority)}]{task.priority}[/]"
+
             table.add_row(
-                f"└─ {task.id}.{subtask.id}",
-                f"  {subtask.title}",
-                subtask_status,
-                "N/A",  # Subtasks don't have priority
-                get_dep_str(subtask.dependencies),
-                ""
+                str(task.id),
+                task.title,
+                status_str,
+                priority_str,
+                get_dep_str(task.dependencies),
+                str(len(task.subtasks))
             )
+
+            # Add subtasks with indentation if they exist
+            subtasks_to_display = filtered_subtasks if (status_filter or priority_filter) else task.subtasks
+            for subtask in subtasks_to_display:
+                subtask_status = f"[{get_status_color(subtask.status)}]{subtask.status}[/]"
+                table.add_row(
+                    f"└─ {task.id}.{subtask.id}",
+                    f"  {subtask.title}",
+                    subtask_status,
+                    "N/A",
+                    get_dep_str(subtask.dependencies),
+                    ""
+                )
 
     console.print("\n[bold]Tasks:[/bold]")
     console.print(table)
@@ -102,6 +115,12 @@ def display_task_details(item: Union[Task, Subtask]):
     # --- Dependencies ---
     if item.dependencies:
          renderables.append(Panel(get_dep_str(item.dependencies), title="🔗 Dependencies", title_align="left", border_style="blue"))
+
+    # --- Linked Files ---
+    if item.linked_files:
+        linked_files_str = "\n".join([f"- {file}" for file in item.linked_files])
+        renderables.append(Panel(linked_files_str, title="📎 Linked Files", title_align="left", border_style="blue"))
+
 
     # --- Additional Details ---
     if item.details:
